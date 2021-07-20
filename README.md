@@ -18,6 +18,15 @@ Install openorb:
 conda install -c conda-forge -c moeyensj openorb
 ```
 
+Install THOR - you can either do a released version, via conda:
+```
+conda install -c conda-forge -c moeyensj thor
+```
+... or a local version, via pip:
+```
+pip install --editable [path/to/thor/repo]
+```
+
 Install thorctl:
 
 ```
