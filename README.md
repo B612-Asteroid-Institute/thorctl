@@ -22,11 +22,17 @@ Install THOR - you can either do a released version, via conda:
 ```
 conda install -c conda-forge -c moeyensj thor
 ```
-... or a local version, via pip:
+
+... or an unreleased version, via pip + git:
 ```
-pip install --editable [path/to/thor/repo]
+VERSION=v1.2  # or any git ref, like "main" or "7278ae1" or "some-other-branch"
+pip install "thor @ git+ssh://git@github.com/moeyensj/thor@$VERSION#egg=thor"
 ```
 
+... or a local version, via pip + path:
+```
+pip install --editable path/to/thor/repo
+```
 Install thorctl:
 
 ```
