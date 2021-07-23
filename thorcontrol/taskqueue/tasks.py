@@ -236,12 +236,12 @@ def download_task_inputs(
 
     cfg_path = _job_input_path(task.job_id, "config.yml")
     logger.info("downloading task input %s", cfg_path)
-    cfg_bytes = bucket.blob(cfg_path).download_as_string()
+    cfg_bytes = bucket.blob(cfg_path).download_as_bytes()
     config = Configuration().fromYamlString(cfg_bytes.decode("utf8"))
 
     obs_path = _job_input_path(task.job_id, "observations.csv")
     logger.info("downloading task input %s", obs_path)
-    obs_bytes = bucket.blob(obs_path).download_as_string()
+    obs_bytes = bucket.blob(obs_path).download_as_bytes()
     observations = pd.read_csv(
         io.BytesIO(obs_bytes),
         index_col=False,
@@ -250,7 +250,7 @@ def download_task_inputs(
 
     orbit_path = _task_input_path(task.job_id, task.task_id, "orbit.csv")
     logger.info("downloading task input %s", orbit_path)
-    orbit_bytes = bucket.blob(orbit_path).download_as_string()
+    orbit_bytes = bucket.blob(orbit_path).download_as_bytes()
     orbit = Orbits.from_csv(io.BytesIO(orbit_bytes))
 
     return (config, observations, orbit)
