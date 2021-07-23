@@ -55,14 +55,11 @@ class WorkerPoolManager:
         machine type.
         """
         worker_name = self._worker_name()
-        # Determined by the Packer image build:
-        source_disk_name = f"global/images/family/thor-worker-{self.queue_name}"
-
         disk = {
             "boot": True,
             "diskSizeGb": "100",
             "initializeParams": {
-                "sourceImage": source_disk_name,
+                "sourceImage": "projects/cos-cloud/global/images/family/cos-stable",
                 "labels": worker_labels(self.queue_name),
             },
             "autoDelete": True,
@@ -80,6 +77,47 @@ class WorkerPoolManager:
             "scopes": ["https://www.googleapis.com/auth/cloud-platform"],
         }
 
+        cloud_init_config = f"""#cloud-config
+
+users:
+- name: thor-worker
+  uid: 2000
+
+write_files:
+- path: /etc/systemd/system/thor-worker.service
+  permissions: 0644
+  owner: root
+  content: |
+    [Unit]
+    Description=THOR worker
+    Wants=gcr-online.target
+    After=gcr-online.target
+
+    [Service]
+    Restart=always
+    Environment="HOME=/home/thor-worker"
+    ExecStartPre=/usr/bin/docker-credential-gcr configure-docker && \
+        docker pull gcr.io/moeyens-thor-dev/thor-worker
+    ExecStart=/usr/bin/docker run --rm \
+                        --name thor-worker \
+                        --env THOR_QUEUE={self.queue_name} \
+                        --net=host \
+                        gcr.io/moeyens-thor-dev/thor-worker
+    ExecStop=/usr/bin/docker stop thor-worker
+    ExecStopPost=/usr/bin/docker rm thor-worker
+
+runcmd:
+- systemctl daemon-reload
+- systemctl start thor-worker.service
+"""
+        metadata = {
+            "items": [
+                {
+                    "key": "user-data",
+                    "value": cloud_init_config
+            ]
+        }
+
         machine = f"zones/{zone}/machineTypes/{machine_type}"
         req = {
             "name": worker_name,
@@ -89,6 +127,7 @@ class WorkerPoolManager:
             "networkInterfaces": [network],
             "serviceAccounts": [service_account],
             "labels": worker_labels(self.queue_name),
+            "metadata": metadata,
         }
 
         logger.info("creating worker %s in %s", worker_name, zone)
