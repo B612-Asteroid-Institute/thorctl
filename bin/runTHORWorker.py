@@ -4,6 +4,7 @@ import os
 import pika
 from google.cloud.storage.client import Client as GCSClient
 from google.cloud.pubsub_v1 import PublisherClient
+from google.cloud.secretmanager_v1 import SecretManagerServiceClient
 
 
 def parse_args():
@@ -34,6 +35,11 @@ def parse_args():
         help="password to connect with to the rabbit broker",
     )
     parser.add_argument(
+        "--rabbit-password-from-secret-manager",
+        action="store_true",
+        help="load rabbit password from google secret manager",
+    )
+    parser.add_argument(
         "--poll-interval",
         type=float,
         default=5.0,
@@ -49,7 +55,13 @@ def parse_args():
     )
     args = parser.parse_args()
     if args.rabbit_password == "$RABBIT_PASSWORD env var":
-        args.rabbit_password = os.environ["RABBIT_PASSWORD"]
+        args.rabbit_password = os.environ.get("RABBIT_PASSWORD")
+    if args.rabbit_password is None and args.rabbit_password_from_secret_manager:
+        client = SecretManagerServiceClient()
+        response = client.access_secret_version(
+            name="projects/moeyens-thor-dev/secrets/rabbitmq-password/versions/latest"
+        )
+        args.rabbit_password = response.payload.data.decode("utf8")
     return args
 
 
