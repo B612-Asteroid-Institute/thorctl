@@ -110,13 +110,7 @@ runcmd:
 - systemctl daemon-reload
 - systemctl start thor-worker.service
 """
-        metadata = {
-            "items": [
-                {
-                    "key": "user-data",
-                    "value": cloud_init_config
-            ]
-        }
+        metadata = {"items": [{"key": "user-data", "value": cloud_init_config}]}
 
         machine = f"zones/{zone}/machineTypes/{machine_type}"
         req = {

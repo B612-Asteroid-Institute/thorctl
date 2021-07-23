@@ -243,7 +243,7 @@ class WorkerSSHConnection:
         ...     conn.print(line)
         """
 
-        self.start_command("journalctl -o cat -f -u thor-worker.service")
+        self.start_command("sudo journalctl -o cat -f -u thor-worker.service")
         self._session.settimeout(0.05)
 
     def iter_available_lines(self, max_lines: int):
