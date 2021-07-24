@@ -45,6 +45,7 @@ RUN /opt/miniconda3/bin/mamba install \
       --channel moeyensj \
       --channel conda-forge \
     --file requirements.txt
+RUN /opt/miniconda3/bin/conda run -n thor_py38 pip install .
 
 # Install thorctl
 ARG THORCTL_GIT_REF
