@@ -44,9 +44,16 @@ RUN /opt/miniconda3/bin/mamba install \
       --channel astropy \
       --channel moeyensj \
       --channel conda-forge \
-      --file requirements.txt
+    --file requirements.txt
 
-RUN /bin/bash -c "source /opt/miniconda3/bin/activate thor_py38 && pip install --editable ."
+# Install thorctl
+ARG THORCTL_GIT_REF
+
+RUN git clone https://github.com/B612-Asteroid-Institute/thorctl /opt/thorctl
+WORKDIR /opt/thorctl
+RUN git checkout $THORCTL_GIT_REF
+RUN /bin/bash -c "source /opt/miniconda3/bin/activate thor_py38 && pip install ."
+
 # Install start script
 COPY start_worker.sh /etc/thor/start_worker.sh
 RUN chmod +x /etc/thor/start_worker.sh
