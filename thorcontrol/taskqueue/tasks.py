@@ -184,7 +184,7 @@ class Task:
         blobpath = posixpath.join(output_blobdir, "error_message.txt")
         logger.error("uploading exception trace to %s", blobpath)
         bucket.blob(blobpath).upload_from_string(exception_string)
-        self._upload_results(self.bucket, result_directory)
+        self._upload_results(bucket, result_directory)
 
 
 # Generated randomly:
