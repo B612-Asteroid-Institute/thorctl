@@ -121,8 +121,6 @@ Dependencies are separated into two categories:
  - *developer* dependencies are ones used when working on thorctl, like
    linters and test runners.
 
-In addition, the `thor` dependency is treated specially and separately.
-
 #### Adding a new runtime dependency ####
 
 Add the dependency to `requirements.in`, and then run `pip-compile
@@ -135,17 +133,9 @@ dev-requirements.in > dev-requirements.txt`. Commit the result.
 
 #### Updating verison of THOR that is used ####
 
-THOR is installed as a git submodule. This means that it's another git repo
-embedded within thorctl. You can treat it like a normal git repository: go in,
-make changes, commit them, and push them.
+THOR is installed using `requirements.in`, but using the special syntax to
+build it directly from a git repository. Update the git reference in that file
+to update it.
 
-You can make local changes inside the ./thor directory and they'll work in your
-developer environment. If you enter the directory and commit the changes,
-they'll be pushed up to the [main THOR repo](https://github.com/moeyensj/thor).
-
-If you want to pull down recent changes, use `git pull` inside the `thor`
-directory, or checkout a specific commit or branch or tag.
-
-From time to time, you might need to run `pip install --editable ./thor` again
-to freshen things up, like installing new or updated dependencies, or new
-packages from thor.
+You can also override this by installing a local copy of THOR, but beware -
+your changes will not appear in deployed or released thorctl code.
