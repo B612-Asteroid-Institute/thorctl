@@ -42,10 +42,7 @@ jobs:
 
   integration-test:
     concurrency: integration-test
-    strategy:
-      matrix:
-        os: ubuntu-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     services:
       rabbitmq:
         image: rabbitmq
@@ -54,7 +51,6 @@ jobs:
           RABBITMQ_DEFAULT_PASS: security_is_very_important
         ports:
           - 5672:5672
-
 
     defaults:
       run:
