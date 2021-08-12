@@ -45,12 +45,18 @@ jobs:
     runs-on: ubuntu-latest
     services:
       rabbitmq:
-        image: rabbitmq
+        image: rabbitmq:latest
         env:
           RABBITMQ_DEFAULT_USER: thor
           RABBITMQ_DEFAULT_PASS: security_is_very_important
         ports:
-          - 5672:5672
+          - 5672/tcp
+        # needed because the rabbitmq container does not provide a healthcheck
+        options: >-
+          --health-cmd "rabbitmqctl node_health_check"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     defaults:
       run:
@@ -79,6 +85,7 @@ jobs:
     - name: Run integration tests
       env:
         RABBIT_USER: thor
+        RABBIT_PORT: ${{ job.services.rabbitmq.ports[5672] }}
         RABBIT_PASSWORD: security_is_very_important
         THORCTL_INTEGRATION_TEST: yes
       run: pytest .
