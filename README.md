@@ -63,16 +63,7 @@ pip install pip --upgrade
 pip install -r requirements.txt -r dev-requirements.txt
 ```
 
-Install the [THOR](https://github.com/moeyensj/thor/) submodule and its
-dependencies:
-
-```
-git submodule init
-git submodule update
-pip install --editable ./thor
-```
-
-Almost done! Now you can install the thorctl commands:
+Now you can install the thorctl commands:
 
 ```
 pip install --editable .
@@ -131,7 +122,7 @@ requirements.in > requirements.txt`. Commit the result.
 Add the dependency to `dev-requirements.in`, and then run `pip-compile
 dev-requirements.in > dev-requirements.txt`. Commit the result.
 
-#### Updating verison of THOR that is used ####
+#### Updating version of THOR that is used ####
 
 THOR is installed using `requirements.in`, but using the special syntax to
 build it directly from a git repository. Update the git reference in that file
