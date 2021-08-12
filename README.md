@@ -57,8 +57,9 @@ Next, use `conda` to install `openorb`:
 conda install openorb
 ```
 
-Then, install `thorctl`'s dependencies with pip:
+Then, install `thorctl`'s dependencies with pip. Make sure you have an up-to-date version of pip for this to work:
 ```
+pip install pip --upgrade
 pip install -r requirements.txt -r dev-requirements.txt
 ```
 
@@ -66,6 +67,8 @@ Install the [THOR](https://github.com/moeyensj/thor/) submodule and its
 dependencies:
 
 ```
+git submodule init
+git submodule update
 pip install --editable ./thor
 ```
 
