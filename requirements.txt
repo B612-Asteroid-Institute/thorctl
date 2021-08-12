@@ -4,8 +4,19 @@
 #
 #    pip-compile requirements.in
 #
+astropy==4.3.1
+    # via
+    #   astroquery
+    #   pyvo
+    #   thor
+astroquery==0.4.3
+    # via thor
+backcall==0.2.0
+    # via ipython
 bcrypt==3.2.0
     # via paramiko
+beautifulsoup4==4.9.3
+    # via astroquery
 cachetools==4.2.2
     # via google-auth
 certifi==2021.5.30
@@ -21,7 +32,17 @@ charset-normalizer==2.0.4
 colorama==0.4.4
     # via -r requirements.in
 cryptography==3.4.7
-    # via paramiko
+    # via
+    #   paramiko
+    #   secretstorage
+cycler==0.10.0
+    # via matplotlib
+debugpy==1.4.1
+    # via ipykernel
+decorator==5.0.9
+    # via ipython
+difi==1.1
+    # via thor
 google-api-core[grpc]==1.31.1
     # via
     #   google-api-python-client
@@ -66,27 +87,98 @@ grpcio==1.39.0
     #   google-cloud-pubsub
     #   googleapis-common-protos
     #   grpc-google-iam-v1
+html5lib==1.1
+    # via astroquery
 httplib2==0.19.1
     # via
     #   google-api-python-client
     #   google-auth-httplib2
 idna==3.2
     # via requests
+importlib-metadata==4.6.3
+    # via keyring
+ipykernel==6.1.0
+    # via thor
+ipython==7.26.0
+    # via ipykernel
+ipython-genutils==0.2.0
+    # via traitlets
+jedi==0.18.0
+    # via ipython
+jeepney==0.7.1
+    # via
+    #   keyring
+    #   secretstorage
+joblib==1.0.1
+    # via scikit-learn
+jupyter-client==6.1.12
+    # via ipykernel
+jupyter-core==4.7.1
+    # via jupyter-client
+keyring==23.0.1
+    # via astroquery
+kiwisolver==1.3.1
+    # via matplotlib
 libcst==0.3.20
     # via
     #   google-cloud-pubsub
     #   google-cloud-secret-manager
+llvmlite==0.36.0
+    # via numba
+matplotlib==3.4.2
+    # via
+    #   seaborn
+    #   thor
+matplotlib-inline==0.1.2
+    # via
+    #   ipykernel
+    #   ipython
+mimeparse==0.1.3
+    # via pyvo
 mypy-extensions==0.4.3
     # via typing-inspect
+numba==0.53.1
+    # via thor
+numpy==1.21.1
+    # via
+    #   astropy
+    #   astroquery
+    #   difi
+    #   matplotlib
+    #   numba
+    #   pandas
+    #   pyerfa
+    #   scikit-learn
+    #   scipy
+    #   seaborn
+    #   spiceypy
+    #   thor
 packaging==21.0
     # via
     #   google-api-core
     #   google-cloud-pubsub
     #   google-cloud-secret-manager
+pandas==1.3.1
+    # via
+    #   difi
+    #   seaborn
+    #   thor
 paramiko==2.7.2
     # via -r requirements.in
+parso==0.8.2
+    # via jedi
+pexpect==4.8.0
+    # via ipython
+pickleshare==0.7.5
+    # via ipython
 pika==1.2.0
     # via -r requirements.in
+pillow==8.3.1
+    # via matplotlib
+plotly==5.1.0
+    # via thor
+prompt-toolkit==3.0.19
+    # via ipython
 proto-plus==1.19.0
     # via
     #   google-cloud-pubsub
@@ -96,6 +188,8 @@ protobuf==3.17.3
     #   google-api-core
     #   googleapis-common-protos
     #   proto-plus
+ptyprocess==0.7.0
+    # via pexpect
 pyasn1==0.4.8
     # via
     #   pyasn1-modules
@@ -104,33 +198,90 @@ pyasn1-modules==0.2.8
     # via google-auth
 pycparser==2.20
     # via cffi
+pyerfa==2.0.0
+    # via astropy
+pygments==2.9.0
+    # via ipython
 pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
     # via
     #   httplib2
+    #   matplotlib
     #   packaging
+python-dateutil==2.8.2
+    # via
+    #   jupyter-client
+    #   matplotlib
+    #   pandas
 pytz==2021.1
-    # via google-api-core
-pyyaml==5.4.1
-    # via libcst
-requests==2.26.0
     # via
     #   google-api-core
+    #   pandas
+pyvo==1.1
+    # via astroquery
+pyyaml==5.4.1
+    # via
+    #   libcst
+    #   thor
+pyzmq==22.2.1
+    # via jupyter-client
+requests==2.26.0
+    # via
+    #   astroquery
+    #   google-api-core
     #   google-cloud-storage
+    #   pyvo
 rsa==4.7.2
     # via google-auth
+scikit-learn==0.24.2
+    # via thor
+scipy==1.7.1
+    # via
+    #   scikit-learn
+    #   seaborn
+    #   thor
+seaborn==0.11.1
+    # via thor
+secretstorage==3.3.1
+    # via keyring
 six==1.16.0
     # via
+    #   astroquery
     #   bcrypt
+    #   cycler
     #   google-api-core
     #   google-auth
     #   google-auth-httplib2
     #   google-cloud-core
     #   google-resumable-media
     #   grpcio
+    #   html5lib
+    #   plotly
     #   protobuf
     #   pynacl
+    #   python-dateutil
+soupsieve==2.2.1
+    # via beautifulsoup4
+spiceypy==4.0.1
+    # via thor
+tenacity==8.0.1
+    # via plotly
+git+git://github.com/moeyensj/thor@89499012623f2b616f4a88098ec7278f31e1c027#egg=thor
+    # via -r requirements.in
+threadpoolctl==2.2.0
+    # via scikit-learn
+tornado==6.1
+    # via
+    #   ipykernel
+    #   jupyter-client
+traitlets==5.0.5
+    # via
+    #   ipykernel
+    #   ipython
+    #   jupyter-client
+    #   jupyter-core
+    #   matplotlib-inline
 typing-extensions==3.10.0.0
     # via
     #   libcst
@@ -141,6 +292,12 @@ uritemplate==3.0.1
     # via google-api-python-client
 urllib3==1.26.6
     # via requests
+wcwidth==0.2.5
+    # via prompt-toolkit
+webencodings==0.5.1
+    # via html5lib
+zipp==3.5.0
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
