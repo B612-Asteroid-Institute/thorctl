@@ -1,0 +1,8 @@
+# thor
+pika
+google-cloud-storage>=1.39.0
+google-cloud-pubsub
+google-cloud-secret-manager
+google-api-python-client
+colorama
+paramiko
