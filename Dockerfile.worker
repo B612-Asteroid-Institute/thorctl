@@ -1,5 +1,7 @@
 FROM ubuntu:20.04
 
+# Must be run from the repository root!
+
 # Install system dependencies
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && \
@@ -14,7 +16,7 @@ RUN curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
 # Install mamba
 RUN /opt/miniconda3/bin/conda install mamba -n base -c conda-forge
 
-## Create THOR conda environment
+## Create THOR conda environment, and install Python 3.8 and OpenOrb
 RUN /opt/miniconda3/bin/conda create \
       --yes \
       --name thor_py38 \
@@ -22,41 +24,29 @@ RUN /opt/miniconda3/bin/conda create \
       --channel astropy \
       --channel moeyensj \
     --channel conda-forge \
-    numpy numba pandas openorb astropy python=3.8
+    python=3.8 openorb
 
-# Clone THOR
-ARG THOR_GIT_REF
+# Upgrade pip, so installing submodule for thor works.
+RUN /bin/bash -c "source /opt/miniconda3/bin/activate thor_py38 && pip install pip --upgrade"
 
-RUN git clone https://github.com/moeyensj/thor /opt/thor
+# Install dependencies.
+COPY requirements.txt /tmp/requirements.txt
+RUN /bin/bash -c "source /opt/miniconda3/bin/activate thor_py38 && pip install -r /tmp/requirements.txt"
+
+# Install thor.
+COPY thor /opt/thor
+COPY .git/modules/thor /opt/thor-git
+RUN rm /opt/thor/.git && mv /opt/thor-git /opt/thor/.git
 WORKDIR /opt/thor
+RUN /bin/bash -c "source /opt/miniconda3/bin/activate thor_py38 && pip --version && pwd && ls -alh && pip install --use-feature=in-tree-build ."
 
-##### FIXME: Temporary while unmerged
-RUN git remote add fork https://github.com/spenczar/thor
-RUN git fetch fork
-##### FIXME: End
-
-RUN git checkout $THOR_GIT_REF
-
-RUN /opt/miniconda3/bin/mamba install \
-      --yes \
-      --name thor_py38 \
-      --channel defaults \
-      --channel astropy \
-      --channel moeyensj \
-      --channel conda-forge \
-    --file requirements.txt
-RUN /opt/miniconda3/bin/conda run -n thor_py38 pip install .
-
-# Install thorctl
-ARG THORCTL_GIT_REF
-
-RUN git clone https://github.com/B612-Asteroid-Institute/thorctl /opt/thorctl
+# Install thorctl.
+COPY . /opt/thorctl
 WORKDIR /opt/thorctl
-RUN git checkout $THORCTL_GIT_REF
 RUN /bin/bash -c "source /opt/miniconda3/bin/activate thor_py38 && pip install ."
 
 # Install start script
-COPY start_worker.sh /etc/thor/start_worker.sh
+COPY /opt/thorctl/infra/workers/start_worker.sh /etc/thor/start_worker.sh
 RUN chmod +x /etc/thor/start_worker.sh
 
 ARG THOR_QUEUE
