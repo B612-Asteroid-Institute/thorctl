@@ -80,5 +80,5 @@ jobs:
       env:
         RABBIT_USER: thor
         RABBIT_PASSWORD: security_is_very_important
-        THORCTL_INTEGRATION_TEST: true
+        THORCTL_INTEGRATION_TEST: yes
       run: pytest .
