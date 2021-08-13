@@ -11,8 +11,7 @@ from typing import TYPE_CHECKING, Mapping, Optional, Tuple
 
 import pandas as pd
 from thor.config import Configuration
-
-from .orbits import Orbits
+from thor.orbits import Orbits
 
 if TYPE_CHECKING:
     import pika
