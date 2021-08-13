@@ -1,39 +1,36 @@
 import logging
-import sys
-import uuid
-from typing import Mapping, Iterator, Optional
-import time
 import tempfile
+import time
+import uuid
+from typing import Iterator, Mapping, Optional
 
 import pandas as pd
-
+from google.cloud.pubsub_v1 import PublisherClient
 from google.cloud.storage import Bucket
 from google.cloud.storage import Client as GCSClient
-from google.cloud.pubsub_v1 import PublisherClient
-
-from thor.main import runTHOROrbit
 from thor.config import Configuration
+from thor.main import runTHOROrbit
 from thor.orbits import Orbits
+
+from thorcontrol.taskqueue import compute_engine
+from thorcontrol.taskqueue.jobs import (
+    JobManifest,
+    announce_job_done,
+    download_job_manifest,
+    mark_task_done_in_manifest,
+    upload_job_manifest,
+)
 from thorcontrol.taskqueue.queue import TaskQueueConnection
 from thorcontrol.taskqueue.tasks import (
     Task,
-    TaskStatus,
     TaskState,
-    upload_job_inputs,
-    get_task_status,
-    set_task_status,
-    get_task_statuses,
+    TaskStatus,
     download_task_outputs,
+    get_task_status,
+    get_task_statuses,
+    set_task_status,
+    upload_job_inputs,
 )
-from thorcontrol.taskqueue.jobs import (
-    JobManifest,
-    upload_job_manifest,
-    download_job_manifest,
-    mark_task_done_in_manifest,
-    announce_job_done,
-)
-from thorcontrol.taskqueue import compute_engine
-
 
 logger = logging.getLogger("thor")
 
@@ -375,7 +372,7 @@ class Worker:
             self.mark_task_succeeded(task, bucket, out_dir)
             return out_dir
         except Exception as e:
-            logger.error("task %s failed", task.task_id, exc_info=sys.exc_info)
+            logger.error("task %s failed", task.task_id, exc_info=e)
             self.mark_task_failed(task, bucket, out_dir, e)
         finally:
             updated_manifest = mark_task_done_in_manifest(
@@ -408,6 +405,7 @@ class Worker:
         # Store the results for the publisher
         task._upload_results(bucket, result_dir)
         # Mark the message as successfully handled
+        assert self.queue.channel is not None, "queue is not connected"
         self.queue.channel.basic_ack(delivery_tag=task._delivery_tag)
         set_task_status(bucket, task.job_id, task.task_id, TaskState.SUCCEEDED)
 
@@ -437,6 +435,7 @@ class Worker:
         # store the failed results
         task._upload_failure(bucket, result_directory, exception)
         # Mark the message as unsuccessfully attempted
+        assert self.queue.channel is not None, "queue is not connected"
         self.queue.channel.basic_nack(delivery_tag=task._delivery_tag, requeue=False)
         set_task_status(bucket, task.job_id, task.task_id, TaskState.FAILED)
 

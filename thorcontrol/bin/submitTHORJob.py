@@ -1,12 +1,12 @@
-import logging
 import argparse
-import pandas as pd
+import logging
 import os
 
-import pika
-from google.cloud.storage import Client as GCSClient
-from google.cloud.pubsub_v1 import PublisherClient
 import google.cloud.exceptions
+import pandas as pd
+import pika
+from google.cloud.pubsub_v1 import PublisherClient
+from google.cloud.storage import Client as GCSClient
 
 logger = logging.getLogger("thor")
 
@@ -30,7 +30,9 @@ def parse_args():
     )
     parser.add_argument("out_dir", type=str, help="destination path for results")
     parser.add_argument(
-        "--config", type=str, default=None,
+        "--config",
+        type=str,
+        default=None,
     )
     parser.add_argument(
         "--create-bucket",
@@ -96,10 +98,11 @@ def main():
 
     thor.utils.logging.setupLogger("thor")
 
+    from thor.config import Config
+    from thor.orbits import Orbits
+
     from thorcontrol.taskqueue.client import Client as TaskQueueClient
     from thorcontrol.taskqueue.queue import TaskQueueConnection
-    from thor.orbits import Orbits
-    from thor.config import Config
 
     if not isinstance(args.config, str):
         config = Config
@@ -120,7 +123,8 @@ def main():
             host=args.rabbit_host,
             port=args.rabbit_port,
             credentials=pika.PlainCredentials(
-                username=args.rabbit_username, password=args.rabbit_password,
+                username=args.rabbit_username,
+                password=args.rabbit_password,
             ),
         ),
         args.queue,
@@ -141,7 +145,11 @@ def main():
     if args.pubsub_topic is not None:
         # Validate pubsub topic
         split_topic = args.pubsub_topic.split("/")
-        if len(split_topic) != 4 or split_topic[0] != "projects" or split_topic[2] != "topics":
+        if (
+            len(split_topic) != 4
+            or split_topic[0] != "projects"
+            or split_topic[2] != "topics"
+        ):
             raise ValueError(
                 "--pubsub-topic must match pattern 'projects/{project}/topics/{topic}'"
             )

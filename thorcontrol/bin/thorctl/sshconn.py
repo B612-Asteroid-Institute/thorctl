@@ -1,11 +1,11 @@
-import colorama
-import socket
-from typing import List, Optional
-import time
 import logging
+import time
+from typing import Dict, List, Optional
 
-import paramiko.ssh_exception
+import colorama
 import paramiko.client
+import paramiko.ssh_exception
+
 from .worker_pool import WorkerPoolManager
 
 logger = logging.getLogger("thorctl")
@@ -27,7 +27,9 @@ _COLORS = [
 class WorkerPoolSSHConnection:
     def __init__(self, manager: WorkerPoolManager):
         self.manager = manager
-        self.connections = {}  # name -> WorkerSSHConnection
+        self.connections: Dict[
+            str, WorkerSSHConnection
+        ] = {}  # name -> WorkerSSHConnection
 
         # counts all connections *ever*, not just currently active ones.
         self.connection_count = 0
@@ -82,7 +84,8 @@ class WorkerPoolSSHConnection:
         return added
 
     def _try_to_connect(self, instance: dict, conn_timeout: int) -> bool:
-        """Attempt to connect to an instance. Return true if success, false if failed.
+        """
+        Attempt to connect to an instance. Return true if success, false if failed.
 
         Parameters
         ----------
@@ -95,7 +98,6 @@ class WorkerPoolSSHConnection:
         -------
         bool
             Whether we connected successfully.
-
         """
         color = self._choose_color()
         name = instance["name"]
@@ -153,6 +155,7 @@ class WorkerSSHConnection:
 
     The connection can be connected or disconnected.
     """
+
     def __init__(self, instance_name: str, instance_ip: str, print_color: str):
         self.instance_name = instance_name
         self.instance_ip = instance_ip
@@ -161,14 +164,14 @@ class WorkerSSHConnection:
         self._client = paramiko.client.SSHClient()
         self._client.set_missing_host_key_policy(_IgnoreMissingHostKeys)
 
-        self._session = None
-        self._session_stdout = None
+        self._session: Optional[paramiko.Channel] = None
+        self._session_stdout: Optional[paramiko.channel.ChannelFile] = None
 
         self._read_buffer = bytes()
 
         self.connected = False
         self.command_running = False
-        self.exit_status = None
+        self.exit_status: Optional[int] = None
 
     def print(self, message: str):
         """
@@ -195,6 +198,7 @@ class WorkerSSHConnection:
 
         self._client.connect(hostname=self.instance_ip, timeout=timeout)
         transport = self._client.get_transport()
+        assert transport is not None
         self._session = transport.open_session(timeout)
         self.connected = True
 
@@ -212,14 +216,14 @@ class WorkerSSHConnection:
         """
         assert self.connected
         assert not self.command_running
-
+        assert self._session is not None
         self._session.get_pty()
         self._session.exec_command(cmd)
         self._session_stdout = self._session.makefile("r", 4096)
         self.command_running = True
 
     def disconnect(self):
-        """End any running session and connection. """
+        """End any running session and connection."""
 
         if self.command_running:
             self._session_stdout.close()
@@ -272,7 +276,7 @@ class WorkerSSHConnection:
         ...         conn.print(line)
         """
 
-        if not self.connected or not self.command_running:
+        if not self.connected or not self.command_running or self._session is None:
             return
 
         lines_read = 0
@@ -318,7 +322,7 @@ class WorkerSSHConnection:
         next_linebreak = self._read_buffer.find(b"\n")
         while next_linebreak > 0:
             line = self._read_buffer[:next_linebreak]
-            self._read_buffer = self._read_buffer[(next_linebreak+1):]
+            self._read_buffer = self._read_buffer[(next_linebreak + 1) :]
             yield line.decode()
             next_linebreak = self._read_buffer.find(b"\n")
 

@@ -1,17 +1,14 @@
-from typing import AnyStr, List, Mapping, Optional
-
 import datetime
 import json
 import logging
-import re
+from typing import AnyStr, List, Optional
 
-from google.cloud.storage import Bucket
 import google.api_core.exceptions
 from google.cloud.pubsub_v1 import PublisherClient
-import google.cloud.pubsub
-
+from google.cloud.storage import Bucket
 from thor.orbits import Orbits
-from thorcontrol.taskqueue.tasks import Task
+
+from .tasks import Task
 
 logger = logging.getLogger("thor")
 
@@ -67,16 +64,18 @@ class JobManifest:
         self.task_ids = task_ids
         self.incomplete_tasks = incomplete_tasks
 
+        self.pubsub_topic: Optional[str] = None
         if pubsub_topic is not None:
             topic_parts = pubsub_topic.split("/")
-            if len(topic_parts) != 4 or topic_parts[0] != "projects" or topic_parts[2] != "topics":
+            if (
+                len(topic_parts) != 4
+                or topic_parts[0] != "projects"
+                or topic_parts[2] != "topics"
+            ):
                 raise ValueError(
                     "pubsub topic must match pattern 'projects/{project}/topics/{topic}'"
                 )
             self.pubsub_topic = pubsub_topic
-        else:
-            self.pubsub_topic = None
-
 
     @classmethod
     def create(cls, job_id: str, pubsub_topic: Optional[str] = None) -> "JobManifest":
@@ -188,8 +187,7 @@ def upload_job_manifest(bucket: Bucket, manifest: JobManifest):
 def mark_task_done_in_manifest(
     bucket: Bucket, job_id: str, task_id: str
 ) -> JobManifest:
-    """
-    """
+    """ """
     path = f"thor_jobs/v1/job-{job_id}/manifest.json"
 
     i = 0
@@ -216,9 +214,10 @@ def mark_task_done_in_manifest(
 
             # Update the new version - as long as the generation hasn't changed.
             bucket.blob(path).upload_from_string(
-                manifest.to_str(), if_generation_match=generation,
+                manifest.to_str(),
+                if_generation_match=generation,
             )
-            logger.debug(f"updated manifest generation=%s", generation)
+            logger.debug("updated manifest generation=%s", generation)
             return manifest
         except google.api_core.exceptions.PreconditionFailed:
             # The generation changed out from under us. Try again.
@@ -231,6 +230,15 @@ def mark_task_done_in_manifest(
                 "got a 404 when asking to update manifest (tried generation=%s)",
                 generation,
             )
+    raise RemoteOperationFailure(
+        "exceeded maximum retries when attempting to update manifest"
+    )
+
+
+class RemoteOperationFailure(Exception):
+    """Represents a failure to performa remote operation"""
+
+    pass
 
 
 def download_job_manifest(bucket: Bucket, job_id: str) -> JobManifest:
