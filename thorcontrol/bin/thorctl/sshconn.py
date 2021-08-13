@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import colorama
 import paramiko.client
@@ -27,7 +27,9 @@ _COLORS = [
 class WorkerPoolSSHConnection:
     def __init__(self, manager: WorkerPoolManager):
         self.manager = manager
-        self.connections = {}  # name -> WorkerSSHConnection
+        self.connections: Dict[
+            str, WorkerSSHConnection
+        ] = {}  # name -> WorkerSSHConnection
 
         # counts all connections *ever*, not just currently active ones.
         self.connection_count = 0
