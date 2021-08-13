@@ -37,6 +37,4 @@ jobs:
 
     - name: Update autoscaler
       run: |
-        cd infra/autoscaler
-        # Commented out for now
-        # ./update.sh
+        infra/autoscaler/update.sh
