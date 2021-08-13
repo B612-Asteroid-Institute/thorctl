@@ -164,14 +164,14 @@ class WorkerSSHConnection:
         self._client = paramiko.client.SSHClient()
         self._client.set_missing_host_key_policy(_IgnoreMissingHostKeys)
 
-        self._session = None
-        self._session_stdout = None
+        self._session: Optional[paramiko.Channel] = None
+        self._session_stdout: Optional[paramiko.channel.ChannelFile] = None
 
         self._read_buffer = bytes()
 
         self.connected = False
         self.command_running = False
-        self.exit_status = None
+        self.exit_status: Optional[int] = None
 
     def print(self, message: str):
         """
@@ -198,6 +198,7 @@ class WorkerSSHConnection:
 
         self._client.connect(hostname=self.instance_ip, timeout=timeout)
         transport = self._client.get_transport()
+        assert transport is not None
         self._session = transport.open_session(timeout)
         self.connected = True
 
@@ -215,7 +216,7 @@ class WorkerSSHConnection:
         """
         assert self.connected
         assert not self.command_running
-
+        assert self._session is not None
         self._session.get_pty()
         self._session.exec_command(cmd)
         self._session_stdout = self._session.makefile("r", 4096)
@@ -275,7 +276,7 @@ class WorkerSSHConnection:
         ...         conn.print(line)
         """
 
-        if not self.connected or not self.command_running:
+        if not self.connected or not self.command_running or self._session is None:
             return
 
         lines_read = 0
