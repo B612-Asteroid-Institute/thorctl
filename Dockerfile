@@ -27,14 +27,17 @@ RUN /opt/miniconda3/bin/conda create \
     --channel conda-forge \
     python=3.8 openorb
 
-# Upgrade pip, so installing submodule for thor works.
-RUN /bin/bash -c "source /opt/miniconda3/bin/activate thor_py38 && pip install pip --upgrade"
+COPY infra/with_conda_env.sh /usr/bin/with_conda
+
+RUN with_conda pip install pip --upgrade
 
 # Install dependencies.
 COPY requirements.txt /tmp/requirements.txt
-RUN /bin/bash -c "source /opt/miniconda3/bin/activate thor_py38 && pip install -r /tmp/requirements.txt"
+RUN with_conda pip install -r /tmp/requirements.txt
 
 # Install thorctl.
 COPY . /opt/thorctl
 WORKDIR /opt/thorctl
-RUN /bin/bash -c "source /opt/miniconda3/bin/activate thor_py38 && pip install ."
+RUN with_conda pip install .
+
+ENTRYPOINT ["/usr/bin/with_conda"]
