@@ -3,7 +3,7 @@ name: verify_dependencies
 on: [push]
 
 jobs:
-  build:
+  test:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -15,8 +15,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: recursive
 
     - name: Set up miniconda
       uses: conda-incubator/setup-miniconda@v2
@@ -38,3 +36,63 @@ jobs:
     - name: Verify installation works
       run: |
         thorctl --help
+
+    - name: Run unit tests
+      run: pytest .
+
+  integration-test:
+    concurrency: integration-test
+    runs-on: ubuntu-latest
+    services:
+      rabbitmq:
+        image: rabbitmq:3.8
+        env:
+          RABBITMQ_DEFAULT_USER: thor
+          RABBITMQ_DEFAULT_PASS: security_is_very_important
+        ports:
+          - 5672/tcp
+        # needed because the rabbitmq container does not provide a healthcheck
+        options: >-
+          --health-cmd "rabbitmqctl node_health_check"
+          --health-interval 30s
+          --health-timeout 10s
+          --health-retries 10
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: thor
+        python-version: 3.8
+        channels: conda-forge
+        mamba-version: "*"
+
+    - name: Install dependencies
+      run: |
+        conda install openorb
+        pip install -r requirements.txt -r dev-requirements.txt
+
+    - name: Install package
+      run: |
+        pip install .
+
+    - name: Set up cloud SDK
+      uses: google-github-actions/setup-gcloud@master
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+
+    - name: Run integration tests
+      env:
+        RABBIT_USER: thor
+        RABBIT_PORT: ${{ job.services.rabbitmq.ports[5672] }}
+        RABBIT_PASSWORD: security_is_very_important
+        THORCTL_INTEGRATION_TEST: yes
+      run: pytest .

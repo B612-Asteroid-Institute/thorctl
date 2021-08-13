@@ -4,5 +4,6 @@ mypy
 flake8
 isort
 black
+pytest
 types-requests
 types-paramiko

@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-RUN_INTEGRATION_TESTS = "THOR_INTEGRATION_TEST" in os.environ
+RUN_INTEGRATION_TESTS = "THORCTL_INTEGRATION_TEST" in os.environ
 
 
 def integration_test(fn):
