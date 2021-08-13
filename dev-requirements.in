@@ -4,3 +4,5 @@ mypy
 flake8
 isort
 black
+types-requests
+types-paramiko
