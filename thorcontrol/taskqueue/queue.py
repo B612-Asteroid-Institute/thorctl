@@ -76,7 +76,7 @@ class TaskQueueConnection:
         task : Task
             The task to be exeucted.
         """
-
+        assert self.channel is not None, "not connected"
         self.channel.basic_publish(
             exchange="",
             routing_key=self.queue_name,
@@ -94,6 +94,8 @@ class TaskQueueConnection:
             A Task to be done, if one is available. If there is no work to be
             done, receive will return None.
         """
+        assert self.connection is not None, "not connected"
+        assert self.channel is not None, "not connected"
 
         # Handle any heartbeats.
         self.connection.process_data_events()
@@ -106,6 +108,7 @@ class TaskQueueConnection:
         return Task.from_msg(self.channel, method, properties, body)
 
     def size(self) -> int:
+        assert self.channel is not None, "not connected"
         response = self.channel.queue_declare(
             queue=self.queue_name,
             passive=True,
