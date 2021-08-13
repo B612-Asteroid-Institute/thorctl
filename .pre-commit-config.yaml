@@ -33,6 +33,7 @@ repos:
   - id: mypy
     additional_dependencies:
       - types-requests
+      - types-paramiko
 
 - repo: https://github.com/jazzband/pip-tools
   rev: 6.2.0
