@@ -233,6 +233,15 @@ def mark_task_done_in_manifest(
                 "got a 404 when asking to update manifest (tried generation=%s)",
                 generation,
             )
+    raise RemoteOperationFailure(
+        "exceeded maximum retries when attempting to update manifest"
+    )
+
+
+class RemoteOperationFailure(Exception):
+    """Represents a failure to performa remote operation"""
+
+    pass
 
 
 def download_job_manifest(bucket: Bucket, job_id: str) -> JobManifest:

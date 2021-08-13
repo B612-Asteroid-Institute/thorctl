@@ -405,6 +405,7 @@ class Worker:
         # Store the results for the publisher
         task._upload_results(bucket, result_dir)
         # Mark the message as successfully handled
+        assert self.queue.channel is not None, "queue is not connected"
         self.queue.channel.basic_ack(delivery_tag=task._delivery_tag)
         set_task_status(bucket, task.job_id, task.task_id, TaskState.SUCCEEDED)
 
@@ -434,6 +435,7 @@ class Worker:
         # store the failed results
         task._upload_failure(bucket, result_directory, exception)
         # Mark the message as unsuccessfully attempted
+        assert self.queue.channel is not None, "queue is not connected"
         self.queue.channel.basic_nack(delivery_tag=task._delivery_tag, requeue=False)
         set_task_status(bucket, task.job_id, task.task_id, TaskState.FAILED)
 
