@@ -26,6 +26,8 @@ fi
 
 pushd workers
 
+QUEUE_NAME=production-taskss
+
 say_green "building base worker image..."
 packer build \
        -var git_ref="${VERSION}" \

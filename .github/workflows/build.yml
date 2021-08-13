@@ -1,0 +1,46 @@
+name: build
+
+on:
+  push
+
+jobs:
+  build-thorctl:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build thorctl base docker image
+      run: |
+        docker build -t thorctl -f Dockerfile .
+
+    - name: Build thorctl worker docker image
+      run: |
+        docker build -t thor-worker -f Dockerfile.worker .
+
+    - name: Build thorctl autoscaler docker image
+      run: |
+        docker build -t thor-autoscaler -f Dockerfile.autoscaler .
+
+  build-worker:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build THOR worker docker image
+      run: |
+        docker build -t thor-worker -f Dockerfile.worker .
+
+    - name: Verify installation works
+      run: |
+        docker run thor-worker bash -c 'source /opt/miniconda3/bin/activate thor_py38 && run-thor-worker --help'
+
+  build-autoscaler:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build THOR autoscaler packer image
+
+
+  build-client-lib:
+    runs-on: ubuntu-latest

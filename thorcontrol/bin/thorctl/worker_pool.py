@@ -96,12 +96,11 @@ write_files:
     Restart=always
     Environment="HOME=/home/thor-worker"
     ExecStartPre=/usr/bin/docker-credential-gcr configure-docker && \
-        docker pull gcr.io/moeyens-thor-dev/thor-worker
+        docker pull gcr.io/moeyens-thor-dev/thor-worker:{self.queue_name}
     ExecStart=/usr/bin/docker run --rm \
                         --name thor-worker \
-                        --env THOR_QUEUE={self.queue_name} \
                         --net=host \
-                        gcr.io/moeyens-thor-dev/thor-worker
+                        gcr.io/moeyens-thor-dev/thor-worker:{self.queue_name}-latest {self.queue_name}
     ExecStop=/usr/bin/docker stop thor-worker
     ExecStopPost=/usr/bin/docker rm thor-worker
 

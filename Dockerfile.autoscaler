@@ -1,0 +1,6 @@
+FROM thorctl
+
+COPY infra/autoscaler/start_autoscaler.sh /usr/bin/start_autoscaler.sh
+RUN chmod +x /usr/bin/start_autoscaler.sh
+
+CMD start_autoscaler.sh
