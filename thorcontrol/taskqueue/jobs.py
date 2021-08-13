@@ -67,6 +67,7 @@ class JobManifest:
         self.task_ids = task_ids
         self.incomplete_tasks = incomplete_tasks
 
+        self.pubsub_topic: Optional[str] = None
         if pubsub_topic is not None:
             topic_parts = pubsub_topic.split("/")
             if (
@@ -78,8 +79,6 @@ class JobManifest:
                     "pubsub topic must match pattern 'projects/{project}/topics/{topic}'"
                 )
             self.pubsub_topic = pubsub_topic
-        else:
-            self.pubsub_topic = None
 
     @classmethod
     def create(cls, job_id: str, pubsub_topic: Optional[str] = None) -> "JobManifest":
