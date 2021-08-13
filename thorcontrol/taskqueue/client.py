@@ -1,5 +1,4 @@
 import logging
-import sys
 import tempfile
 import time
 import uuid
@@ -373,7 +372,7 @@ class Worker:
             self.mark_task_succeeded(task, bucket, out_dir)
             return out_dir
         except Exception as e:
-            logger.error("task %s failed", task.task_id, exc_info=sys.exc_info)
+            logger.error("task %s failed", task.task_id, exc_info=e)
             self.mark_task_failed(task, bucket, out_dir, e)
         finally:
             updated_manifest = mark_task_done_in_manifest(
