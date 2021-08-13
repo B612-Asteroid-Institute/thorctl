@@ -10,13 +10,12 @@ import uuid
 from typing import TYPE_CHECKING, Mapping, Optional, Tuple
 
 import pandas as pd
+import pika
+from google.cloud.storage.bucket import Bucket
 from thor.config import Configuration
 from thor.orbits import Orbits
 
 if TYPE_CHECKING:
-    import pika
-    from google.cloud.storage.bucket import Bucket
-
     from .jobs import JobManifest
 
 logger = logging.getLogger("thor")
@@ -534,7 +533,7 @@ def get_task_status(bucket: Bucket, job_id: str, task_id: str) -> TaskStatus:
 
 
 def get_task_statuses(
-    bucket: Bucket, manifest: JobManifest
+    bucket: Bucket, manifest: "JobManifest"
 ) -> Mapping[str, TaskStatus]:
     """Retrieve the status of all tasks in the manifest.
 

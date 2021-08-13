@@ -1,17 +1,14 @@
 import datetime
 import json
 import logging
-from typing import TYPE_CHECKING, AnyStr, List, Optional
+from typing import AnyStr, List, Optional
 
 import google.api_core.exceptions
+from google.cloud.pubsub_v1 import PublisherClient
+from google.cloud.storage import Bucket
+from thor.orbits import Orbits
 
-if TYPE_CHECKING:
-    from google.cloud.pubsub_v1 import PublisherClient
-    from google.cloud.storage import Bucket
-    from thor.orbits import Orbits
-
-    from .tasks import Task
-
+from .tasks import Task
 
 logger = logging.getLogger("thor")
 
