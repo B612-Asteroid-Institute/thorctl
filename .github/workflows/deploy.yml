@@ -12,7 +12,7 @@ jobs:
 
     - name: Build thorctl docker image
       run: |
-        docker build -t thorctl:$GITHUB_SHA
+        docker build -t thorctl:$GITHUB_SHA .
 
     - name: Tag built image
       run: |
@@ -24,3 +24,7 @@ jobs:
         docker push gcr.io/moeyens-thor-dev/thorctl:$GITHUB_SHA
 
     - name: Update autoscaler
+      run: |
+        cd infra/autoscaler
+        # Commented out for now
+        # ./update.sh

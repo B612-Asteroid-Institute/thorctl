@@ -11,4 +11,4 @@ jobs:
 
     - name: Build thorctl docker image
       run: |
-        docker build -t thorctl
+        docker build -t thorctl .
