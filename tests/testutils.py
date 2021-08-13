@@ -1,6 +1,6 @@
-import pytest
 import os
 
+import pytest
 
 RUN_INTEGRATION_TESTS = "THORCTL_INTEGRATION_TEST" in os.environ
 

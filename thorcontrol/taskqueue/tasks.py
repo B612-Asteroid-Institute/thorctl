@@ -1,23 +1,22 @@
-from typing import Optional, Tuple, Mapping
-
+import enum
 import io
-import os
 import json
 import logging
-import uuid
-import socket
+import os
 import posixpath
+import socket
 import traceback
-import enum
+import uuid
+from typing import TYPE_CHECKING, Mapping, Optional, Tuple
 
-import pika
 import pandas as pd
-
+import pika
 from google.cloud.storage.bucket import Bucket
-
 from thor.config import Configuration
 from thor.orbits import Orbits
 
+if TYPE_CHECKING:
+    from .jobs import JobManifest
 
 logger = logging.getLogger("thor")
 
@@ -256,7 +255,9 @@ def download_task_inputs(
     return (config, observations, orbit)
 
 
-def upload_job_inputs(bucket: Bucket, job_id: str, config: Configuration, observations: pd.DataFrame):
+def upload_job_inputs(
+    bucket: Bucket, job_id: str, config: Configuration, observations: pd.DataFrame
+):
     """Upload all the inputs required to execute a task.
 
     These inputs are uploaded into the given bucket. This function uploads the
@@ -310,7 +311,6 @@ def upload_task_inputs(bucket: Bucket, task: Task, orbit: Orbits):
         The test orbits to use in a THOR run.
 
     """
-
 
     # Upload orbit
     orbit_buf = io.BytesIO()
@@ -386,6 +386,7 @@ class TaskState(enum.Enum):
     succeeded (if execution terminates without error) or failed (if any
     exception occurred while running THOR).
     """
+
     REQUESTED = "requested"
     IN_PROGRESS = "in_progress"
     SUCCEEDED = "succeeded"
@@ -466,9 +467,9 @@ class TaskStatus:
         TaskStatus
             The deserialized TaskStatus.
         """
-        data = json.loads(data)
-        state = TaskState(data["state"])
-        worker = data["worker"]
+        data_dict = json.loads(data)
+        state = TaskState(data_dict["state"])
+        worker = data_dict["worker"]
         if worker == "None":
             worker = None
         return TaskStatus(state, worker)
@@ -531,7 +532,9 @@ def get_task_status(bucket: Bucket, job_id: str, task_id: str) -> TaskStatus:
     return TaskStatus.from_bytes(status_str)
 
 
-def get_task_statuses(bucket: Bucket, manifest: "JobManifest") -> Mapping[str, TaskStatus]:
+def get_task_statuses(
+    bucket: Bucket, manifest: "JobManifest"
+) -> Mapping[str, TaskStatus]:
     """Retrieve the status of all tasks in the manifest.
 
     Task statuses are stored in a bucket, so this does a sequence of remote

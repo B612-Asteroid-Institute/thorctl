@@ -1,10 +1,12 @@
-from typing import Sequence
-import time
-import pika
 import logging
-from .worker_pool import WorkerPoolManager
+import time
+from typing import Sequence
+
+import pika
+
 from thorcontrol.taskqueue.queue import TaskQueueConnection
 
+from .worker_pool import WorkerPoolManager
 
 logger = logging.getLogger("thorctl")
 

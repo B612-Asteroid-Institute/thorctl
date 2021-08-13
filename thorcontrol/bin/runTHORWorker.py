@@ -2,9 +2,9 @@ import argparse
 import os
 
 import pika
-from google.cloud.storage.client import Client as GCSClient
 from google.cloud.pubsub_v1 import PublisherClient
 from google.cloud.secretmanager_v1 import SecretManagerServiceClient
+from google.cloud.storage.client import Client as GCSClient
 
 
 def parse_args():
@@ -82,7 +82,8 @@ def main():
             host=args.rabbit_host,
             port=args.rabbit_port,
             credentials=pika.PlainCredentials(
-                username=args.rabbit_username, password=args.rabbit_password,
+                username=args.rabbit_username,
+                password=args.rabbit_password,
             ),
             heartbeat=use_12_hour_heartbeat,
         ),

@@ -63,7 +63,14 @@ pip install pip --upgrade
 pip install -r requirements.txt -r dev-requirements.txt
 ```
 
-Now you can install the thorctl commands:
+You now have all the developer requirements installed. You can now install the
+pre-commit hooks for automating checks:
+
+```
+pre-commit install
+```
+
+Install the thorctl commands:
 
 ```
 pip install --editable .
@@ -130,3 +137,13 @@ to update it.
 
 You can also override this by installing a local copy of THOR, but beware -
 your changes will not appear in deployed or released thorctl code.
+
+### Running lint and tests
+
+If you ran `pre-commit install`, which is part of the instructions, you should
+automatically run linters, code formatters, and tests on every commit. You can
+run them manually like this:
+
+```
+pre-commit run --all-files
+```
