@@ -1,11 +1,11 @@
-import colorama
-import socket
-from typing import List, Optional
-import time
 import logging
+import time
+from typing import List, Optional
 
-import paramiko.ssh_exception
+import colorama
 import paramiko.client
+import paramiko.ssh_exception
+
 from .worker_pool import WorkerPoolManager
 
 logger = logging.getLogger("thorctl")
@@ -82,7 +82,8 @@ class WorkerPoolSSHConnection:
         return added
 
     def _try_to_connect(self, instance: dict, conn_timeout: int) -> bool:
-        """Attempt to connect to an instance. Return true if success, false if failed.
+        """
+        Attempt to connect to an instance. Return true if success, false if failed.
 
         Parameters
         ----------
@@ -95,7 +96,6 @@ class WorkerPoolSSHConnection:
         -------
         bool
             Whether we connected successfully.
-
         """
         color = self._choose_color()
         name = instance["name"]
@@ -153,6 +153,7 @@ class WorkerSSHConnection:
 
     The connection can be connected or disconnected.
     """
+
     def __init__(self, instance_name: str, instance_ip: str, print_color: str):
         self.instance_name = instance_name
         self.instance_ip = instance_ip
@@ -219,7 +220,7 @@ class WorkerSSHConnection:
         self.command_running = True
 
     def disconnect(self):
-        """End any running session and connection. """
+        """End any running session and connection."""
 
         if self.command_running:
             self._session_stdout.close()
@@ -318,7 +319,7 @@ class WorkerSSHConnection:
         next_linebreak = self._read_buffer.find(b"\n")
         while next_linebreak > 0:
             line = self._read_buffer[:next_linebreak]
-            self._read_buffer = self._read_buffer[(next_linebreak+1):]
+            self._read_buffer = self._read_buffer[(next_linebreak + 1) :]
             yield line.decode()
             next_linebreak = self._read_buffer.find(b"\n")
 

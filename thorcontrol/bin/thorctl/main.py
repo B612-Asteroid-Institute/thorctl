@@ -1,7 +1,7 @@
 import logging
 import sys
-from . import commands
 
+from . import commands
 
 logger = logging.getLogger("thorctl")
 logger.setLevel(logging.DEBUG)

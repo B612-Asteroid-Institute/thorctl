@@ -1,12 +1,13 @@
-from typing import List
-import os
-import logging
 import argparse
+import logging
+import os
+from typing import List
+
 import pika
 
-from .worker_pool import WorkerPoolManager
-from .sshconn import WorkerPoolSSHConnection
 from .autoscaler import Autoscaler
+from .sshconn import WorkerPoolSSHConnection
+from .worker_pool import WorkerPoolManager
 
 logger = logging.getLogger("thorctl")
 
@@ -58,7 +59,9 @@ def parse_args():
         "size", help="look up the current number of workers"
     )
     check_size.add_argument(
-        "queue", type=str, help="name of the queue that workers are listening to",
+        "queue",
+        type=str,
+        help="name of the queue that workers are listening to",
     )
 
     destroy = subparsers.add_parser(
@@ -185,7 +188,7 @@ def autoscale(
         credentials=pika.PlainCredentials(
             username=rabbit_username,
             password=rabbit_password,
-        )
+        ),
     )
     scaler = Autoscaler(rabbit_params, queues, max_size, machine_type)
     scaler.run(poll_interval)

@@ -1,8 +1,7 @@
-from typing import List, Optional, Dict, Mapping
-import random
 import logging
+import random
 import string
-import pika
+from typing import Dict, List, Mapping, Optional
 
 import googleapiclient.discovery
 

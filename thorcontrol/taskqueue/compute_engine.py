@@ -1,11 +1,10 @@
-from typing import Any
 import json
 import logging
-import requests
 import time
+from typing import Any
 
 import googleapiclient.discovery
-
+import requests
 
 logger = logging.getLogger("thor")
 
@@ -29,9 +28,15 @@ def terminate_self():
 
     logger.info("sending DELETE request to terminate instance")
     compute_client = googleapiclient.discovery.build("compute", "v1")
-    operation = compute_client.instances().delete(
-        project=project, zone=zone, instance=name,
-    ).execute()
+    operation = (
+        compute_client.instances()
+        .delete(
+            project=project,
+            zone=zone,
+            instance=name,
+        )
+        .execute()
+    )
 
     logger.info("Blocking to wait for the delete to complete")
     compute_client.zoneOperations().wait(

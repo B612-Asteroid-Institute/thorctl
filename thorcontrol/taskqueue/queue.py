@@ -1,5 +1,6 @@
-import pika
 from typing import Optional
+
+import pika
 
 from thorcontrol.taskqueue.tasks import Task
 
@@ -48,7 +49,7 @@ class TaskQueueConnection:
         self.queue_name = queue_name
 
     def connect(self):
-        """Establish a persistent connection to the RabbitMQ backend. """
+        """Establish a persistent connection to the RabbitMQ backend."""
 
         self.connection = pika.BlockingConnection(self.connection_params)
         self.channel = self.connection.channel()
