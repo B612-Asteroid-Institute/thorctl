@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       rabbitmq:
-        image: rabbitmq:latest
+        image: rabbitmq:3.8
         env:
           RABBITMQ_DEFAULT_USER: thor
           RABBITMQ_DEFAULT_PASS: security_is_very_important
