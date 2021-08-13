@@ -1,51 +1,12 @@
 #!/bin/bash
 
-set -euo pipefail
+set -xeuo pipefail
 
-green=$(tput setaf 2)
-normal=$(tput sgr0)
+docker tag thorctl:production-tasks-latest gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
+docker push gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
 
-say_green() {
-    printf "  ${green}${1}${normal}\n"
-}
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-if [[ $# -gt 0 ]]; then
-    VERSION=$1
-else
-    echo "no version provided, inferring it..."
-    VERSION=$(git describe HEAD)
-fi
-
-say_green "Releasing version ${VERSION}: Does this version look correct? (yes/no)"
-read response
-
-if [[ $response != "yes" ]]; then
-    echo "aborting"
-    exit 1
-fi
-
-pushd workers
-
-say_green "building base worker image..."
-packer build \
-       -var git_ref="${VERSION}" \
-       base-image.pkr.hcl
-
-say_green "building base worker image..."
-packer build \
-       -var queue=production-tasks \
-       -var git_ref="${VERSION}" \
-       image.pkr.hcl
-
-popd
-
-pushd autoscaler
-say_green "building autoscaler image..."
-packer build \
-       -var git_ref="${VERSION}" \
-       image.pkr.hcl
-
-say_green "updating autoscaler..."
-./launch.sh
-
-popd
+cd $SCRIPT_DIR/autoscaler
+./update.sh
+cd -

@@ -1,9 +1,10 @@
 import argparse
 import logging
 import os
-from typing import List
+from typing import List, Optional
 
 import pika
+from google.cloud.secretmanager_v1 import SecretManagerServiceClient
 
 from .autoscaler import Autoscaler
 from .sshconn import WorkerPoolSSHConnection
@@ -31,6 +32,7 @@ def dispatch(parser, args):
             args.rabbit_port,
             args.rabbit_username,
             args.rabbit_password,
+            args.rabbit_password_from_secret_manager,
         )
     elif args.command is None:
         parser.print_usage()
@@ -121,6 +123,11 @@ def parse_args():
         default="$RABBIT_PASSWORD env var",
         help="password to connect with to the rabbit broker",
     )
+    autoscale.add_argument(
+        "--rabbit-password-from-secret-manager",
+        action="store_true",
+        help="load rabbit password from google secret manager",
+    )
 
     return parser, parser.parse_args()
 
@@ -176,11 +183,18 @@ def autoscale(
     rabbit_host: str,
     rabbit_port: int,
     rabbit_username: str,
-    rabbit_password: str,
+    rabbit_password: Optional[str],
+    rabbit_password_from_secret_manager: bool,
 ):
 
     if rabbit_password == "$RABBIT_PASSWORD env var":
-        rabbit_password = os.environ["RABBIT_PASSWORD"]
+        rabbit_password = os.environ.get("RABBIT_PASSWORD")
+    if rabbit_password is None and rabbit_password_from_secret_manager:
+        client = SecretManagerServiceClient()
+        response = client.access_secret_version(
+            name="projects/moeyens-thor-dev/secrets/rabbitmq-password/versions/latest"
+        )
+        rabbit_password = response.payload.data.decode("utf8")
 
     rabbit_params = pika.ConnectionParameters(
         host=rabbit_host,

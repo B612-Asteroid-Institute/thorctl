@@ -74,8 +74,8 @@ def main():
 
     thor.utils.logging.setupLogger("thor")
 
-    from thor.taskqueue.client import Worker
-    from thor.taskqueue.queue import TaskQueueConnection
+    from thorcontrol.taskqueue.client import Worker
+    from thorcontrol.taskqueue.queue import TaskQueueConnection
 
     queue = TaskQueueConnection(
         pika.ConnectionParameters(
