@@ -1,4 +1,4 @@
-name: verify_dependencies
+name: test
 
 on: [push]
 
