@@ -1,0 +1,26 @@
+name: deploy
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build thorctl docker image
+      run: |
+        docker build -t thorctl:$GITHUB_SHA
+
+    - name: Tag built image
+      run: |
+        docker tag thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:$GITHUB_SHA
+        docker tag thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
+    - name: Push image
+      run: |
+        docker push gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
+        docker push gcr.io/moeyens-thor-dev/thorctl:$GITHUB_SHA
+
+    - name: Update autoscaler

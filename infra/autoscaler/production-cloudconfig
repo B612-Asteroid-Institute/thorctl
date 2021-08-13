@@ -1,11 +1,11 @@
 #cloud-config
 
 users:
-- name: thor-worker
+- name: thor-autoscaler
   uid: 2000
 
 write_files:
-- path: /etc/systemd/system/thor-worker.service
+- path: /etc/systemd/system/thor-autoscaler.service
   permissions: 0644
   owner: root
   content: |
@@ -18,18 +18,19 @@ write_files:
     Restart=always
     Environment="HOME=/home/thor-autoscaler"
     ExecStartPre=/usr/bin/docker-credential-gcr configure-docker && \
-        docker pull gcr.io/moeyens-thor-dev/thor-autoscaler:production-latest
+        docker pull gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
     ExecStart=/usr/bin/docker run --rm \
                         --name thor-autoscaler \
                         --net=host \
                         --env THOR_AUTOSCALED_QUEUES=production-tasks \
-                        gcr.io/moeyens-thor-dev/thor-autoscaler:production-latest production-tasks
-    ExecStop=/usr/bin/docker stop thor-worker
-    ExecStopPost=/usr/bin/docker rm thor-worker
+                        gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest \
+                        thorctl autoscale --rabbit-password-from-secret-manager production-tasks
+    ExecStop=/usr/bin/docker stop thor-autoscaler
+    ExecStopPost=/usr/bin/docker rm thor-autoscaler
 
     [Install]
     WantedBy=multi-user.target
 
 runcmd:
 - systemctl daemon-reload
-- systemctl start thor-worker.service
+- systemctl start thor-autoscaler.service

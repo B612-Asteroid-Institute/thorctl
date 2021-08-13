@@ -1,8 +1,0 @@
-FROM thorctl
-
-# This is the dockerfile that installs a thorctl worker
-
-# Install start script
-COPY ./infra/workers/start_worker.sh /etc/thor/start_worker.sh
-RUN chmod +x /etc/thor/start_worker.sh
-CMD /etc/thor/start_worker.sh
