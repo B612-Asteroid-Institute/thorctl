@@ -468,9 +468,9 @@ class TaskStatus:
         TaskStatus
             The deserialized TaskStatus.
         """
-        data = json.loads(data)
-        state = TaskState(data["state"])
-        worker = data["worker"]
+        data_dict = json.loads(data)
+        state = TaskState(data_dict["state"])
+        worker = data_dict["worker"]
         if worker == "None":
             worker = None
         return TaskStatus(state, worker)
