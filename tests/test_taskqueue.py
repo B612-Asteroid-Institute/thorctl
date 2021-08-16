@@ -209,9 +209,10 @@ def test_client_roundtrip(
     # trim down to 3 orbits
     orbits = Orbits.from_df(orbits.to_df()[:3])
     n_task = 3
+    job_id = "integration-test-run"
 
     manifest = taskqueue_client.launch_job(
-        test_config, observations, orbits, google_pubsub_topic
+        test_config, observations, orbits, job_id, google_pubsub_topic
     )
     assert len(manifest.task_ids) == n_task
 

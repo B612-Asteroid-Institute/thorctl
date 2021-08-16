@@ -267,5 +267,5 @@ def announce_job_done(client: PublisherClient, manifest: JobManifest):
         logger.info("no pubsub topic set for job %s", manifest.job_id)
         return
     announcement = manifest.to_str().encode()
-    future = client.publish(manifest.pubsub_topic, announcement)
+    future = client.publish(manifest.pubsub_topic, announcement, uid=manifest.job_id)
     future.result()
