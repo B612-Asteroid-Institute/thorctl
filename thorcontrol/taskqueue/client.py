@@ -60,6 +60,7 @@ class Client:
         config: Configuration,
         observations: pd.DataFrame,
         orbits: Orbits,
+        job_id: str,
         job_completion_pubsub_topic: Optional[str] = None,
     ) -> JobManifest:
         """
@@ -77,6 +78,8 @@ class Client:
             thor.main.runTHOR.
         orbits : Orbits
             The test orbits to be used by task executors.
+        job_id : str
+            The job uid created by the API.
         job_completion_pubsub_topic : Optional[str]
             The name of a pubsub topic (in the canonical
             projects/{project}/topics/{topic} format) which should get an
@@ -90,8 +93,7 @@ class Client:
         """
         logger.info("launching new job")
 
-        job_id = str(uuid.uuid1())
-        logger.info("generated job ID: %s", job_id)
+        logger.info("received job ID: %s", job_id)
 
         logger.info("uploading job inputs")
         upload_job_inputs(self.bucket, job_id, config, observations)
