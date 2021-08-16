@@ -2,7 +2,8 @@
 set -xeuo pipefail
 
 echo "Bringing down existing autoscaler..."
-gcloud compute instances delete thor-autoscaler-production
+gcloud compute instances delete thor-autoscaler-production \
+       --zone=us-west1-a
 
 echo "Bringing up new one..."
 gcloud compute instances create thor-autoscaler-production \
