@@ -1,12 +1,16 @@
 #!/bin/bash
 set -xeuo pipefail
 
+echo "Checking for existing autoscaler..."
+if gcloud compute instances list --zones=us-west1-a | grep -q 'thor-autoscaler-production'; then
 
-echo "Bringing down existing autoscaler..."
-gcloud compute instances delete thor-autoscaler-production \
-       --zone=us-west1-a
 
-echo "Bringing up new one..."
+    echo "Bringing down existing autoscaler..."
+    gcloud compute instances delete thor-autoscaler-production \
+           --zone=us-west1-a
+fi
+
+echo "Bringing up new autoscaler..."
 
 # Create the autoscaler using the configuration file ('production-cloudconfig')
 # in the same directory as this script.
