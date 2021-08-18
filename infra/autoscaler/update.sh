@@ -2,8 +2,6 @@
 set -xeuo pipefail
 
 
-cd "${SCRIPT_DIR}/../"
-
 echo "Bringing down existing autoscaler..."
 gcloud compute instances delete thor-autoscaler-production \
        --zone=us-west1-a
