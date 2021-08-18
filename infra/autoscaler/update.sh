@@ -3,8 +3,6 @@ set -xeuo pipefail
 
 echo "Checking for existing autoscaler..."
 if gcloud compute instances list --zones=us-west1-a | grep -q 'thor-autoscaler-production'; then
-
-
     echo "Bringing down existing autoscaler..."
     gcloud compute instances delete thor-autoscaler-production \
            --zone=us-west1-a
