@@ -94,7 +94,7 @@ def parse_args():
         args.rabbit_password = os.environ["RABBIT_PASSWORD"]
 
     if args.job_id == "<randomly generated>":
-        args.job_id = uuid.uuid4()
+        args.job_id = str(uuid.uuid4())
 
     return args
 
