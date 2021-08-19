@@ -373,34 +373,34 @@ class Worker:
                 "beginning execution for job %s, task %s", task.job_id, task.task_id
             )
             script = f"""
-import pandas as pd
-import logging
-from thor import runTHOR
-from thor.orbits import Orbits
-from thor.config import Config
+            import pandas as pd
+            import logging
+            from thor import runTHOR
+            from thor.orbits import Orbits
+            from thor.config import Config
 
-observations = pd.read_csv(
-    "{observations_file_path}",
-    index_col=False,
-    dtype={{"obs_id": str}},
-)
+            observations = pd.read_csv(
+                "{observations_file_path}",
+                index_col=False,
+                dtype={{"obs_id": str}},
+            )
 
-test_orbits = Orbits.from_csv("{orbits_file_path}")
+            test_orbits = Orbits.from_csv("{orbits_file_path}")
 
-config = Config.fromYaml("{config_file_path}")
+            config = Config.fromYaml("{config_file_path}")
 
-runTHOR(
-    observations,
-    test_orbits,
-    range_shift_config=config.RANGE_SHIFT_CONFIG,
-    cluster_link_config=config.CLUSTER_LINK_CONFIG,
-    iod_config=config.IOD_CONFIG,
-    od_config=config.OD_CONFIG,
-    odp_config=config.ODP_CONFIG,
-    out_dir="{out_dir}",
-    logging_level=logging.INFO,
-)
-"""
+            runTHOR(
+                observations,
+                test_orbits,
+                range_shift_config=config.RANGE_SHIFT_CONFIG,
+                cluster_link_config=config.CLUSTER_LINK_CONFIG,
+                iod_config=config.IOD_CONFIG,
+                od_config=config.OD_CONFIG,
+                odp_config=config.ODP_CONFIG,
+                out_dir="{out_dir}",
+                logging_level=logging.INFO,
+            )
+            """
             # Use subprocess.Popen rathen than subprocess.run just so we get a
             # bit more control on output. Doing things carefully lets us stream
             # the process's output through, which lets it appear in logs.
