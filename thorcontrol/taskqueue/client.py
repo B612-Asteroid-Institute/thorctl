@@ -1,4 +1,8 @@
 import logging
+import os
+import os.path
+import subprocess
+import sys
 import tempfile
 import time
 from typing import Iterator, Mapping, Optional
@@ -8,7 +12,6 @@ from google.cloud.pubsub_v1 import PublisherClient
 from google.cloud.storage import Bucket
 from google.cloud.storage import Client as GCSClient
 from thor.config import Configuration
-from thor.main import runTHOROrbit
 from thor.orbits import Orbits
 
 from thorcontrol.taskqueue import compute_engine
@@ -24,6 +27,7 @@ from thorcontrol.taskqueue.tasks import (
     Task,
     TaskState,
     TaskStatus,
+    download_task_inputs_to_dir,
     download_task_outputs,
     get_task_status,
     get_task_statuses,
@@ -355,39 +359,92 @@ class Worker:
         """
         try:
             bucket = self.gcs.bucket(task.bucket)
-            config, observations, orbit = task.download_inputs(bucket)
-            logger.debug("downloaded inputs")
-
             out_dir = tempfile.TemporaryDirectory(
                 prefix=f"thor_{task.job_id}_{task.task_id}",
             ).name
+            os.makedirs(out_dir, exist_ok=True)
+            download_task_inputs_to_dir(bucket, task, out_dir)
+            logger.debug("downloaded inputs")
 
+            observations_file_path = os.path.join(out_dir, "observations.csv")
+            orbits_file_path = os.path.join(out_dir, "orbit.csv")
+            config_file_path = os.path.join(out_dir, "config.yml")
             logger.info(
                 "beginning execution for job %s, task %s", task.job_id, task.task_id
             )
+            script = f"""
+import pandas as pd
+import logging
+from thor import runTHOR
+from thor.orbits import Orbits
+from thor.config import Config
 
-            runTHOROrbit(
-                observations,
-                orbit,
-                range_shift_config=config.RANGE_SHIFT_CONFIG,
-                cluster_link_config=config.CLUSTER_LINK_CONFIG,
-                iod_config=config.IOD_CONFIG,
-                od_config=config.OD_CONFIG,
-                odp_config=config.ODP_CONFIG,
-                out_dir=out_dir,
-                if_exists="erase",
-                logging_level=logging.INFO,
+observations = pd.read_csv(
+    "{observations_file_path}",
+    index_col=False,
+    dtype={{"obs_id": str}},
+)
+
+test_orbits = Orbits.from_csv("{orbits_file_path}")
+
+config = Config.fromYaml("{config_file_path}")
+
+runTHOR(
+    observations,
+    test_orbits,
+    range_shift_config=config.RANGE_SHIFT_CONFIG,
+    cluster_link_config=config.CLUSTER_LINK_CONFIG,
+    iod_config=config.IOD_CONFIG,
+    od_config=config.OD_CONFIG,
+    odp_config=config.ODP_CONFIG,
+    out_dir="{out_dir}",
+    logging_level=logging.INFO,
+)
+"""
+            # Use subprocess.Popen rathen than subprocess.run just so we get a
+            # bit more control on output. Doing things carefully lets us stream
+            # the process's output through, which lets it appear in logs.
+            process = subprocess.Popen(
+                ["python", "-c", script],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
             )
-            self.mark_task_succeeded(task, bucket, out_dir)
-            return out_dir
+
+            # TODO: Would be nice to set a timeout. But it's trickier than it
+            # might appear, if we also want to capture output, since that
+            # blocks on the read call. We need to do something like
+            # select.poll() to get that right.
+
+            output = b""
+            for line in process.stdout:  # type:ignore
+                sys.stdout.write(line.decode("utf8"))
+                output += line
+
+            return_code = process.wait()
+            with open(os.path.join(out_dir, "captured_output.txt"), "wb") as f:
+                f.write(output)
+
+            if return_code != 0:
+                # Slightly roundabout - why not call mark_task_failed, right?
+                # The reason is that mark_task_failed wants an Exception as its
+                # fourth argument. Perhaps that could be refactored out, but
+                # this is expedient for now.
+                raise subprocess.CalledProcessError(
+                    returncode=return_code,
+                    cmd=process.cmd,  # type:ignore
+                    output=output,
+                )
+            else:
+                self.mark_task_succeeded(task, bucket, out_dir)
+
         except Exception as e:
             logger.error("task %s failed", task.task_id, exc_info=e)
             self.mark_task_failed(task, bucket, out_dir, e)
+
         finally:
             updated_manifest = mark_task_done_in_manifest(
                 bucket, task.job_id, task.task_id
             )
-
             # If our update reduced the manifest down to zero tasks, then we
             # were the last task. Announce everything is done.
             all_tasks_done = len(updated_manifest.incomplete_tasks) == 0
