@@ -404,8 +404,9 @@ class Worker:
             # Use subprocess.Popen rathen than subprocess.run just so we get a
             # bit more control on output. Doing things carefully lets us stream
             # the process's output through, which lets it appear in logs.
+            cmd = ["python", "-c", script]
             process = subprocess.Popen(
-                ["python", "-c", script],
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
             )
@@ -431,7 +432,7 @@ class Worker:
                 # this is expedient for now.
                 raise subprocess.CalledProcessError(
                     returncode=return_code,
-                    cmd=process.cmd,  # type:ignore
+                    cmd=" ".join(cmd),
                     output=output,
                 )
             else:
