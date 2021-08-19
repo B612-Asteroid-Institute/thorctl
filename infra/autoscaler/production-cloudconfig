@@ -24,7 +24,12 @@ write_files:
                         --net=host \
                         --env THOR_AUTOSCALED_QUEUES=production-tasks \
                         gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest \
-                        thorctl autoscale --rabbit-password-from-secret-manager production-tasks
+                        thorctl autoscale \
+                            --rabbit-password-from-secret-manager \
+                            --machine-type c2-standard-16 \
+                            production-tasks
+
+
     ExecStop=/usr/bin/docker stop thor-autoscaler
     ExecStopPost=/usr/bin/docker rm thor-autoscaler
 
