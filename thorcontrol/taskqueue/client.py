@@ -359,16 +359,21 @@ class Worker:
         """
         try:
             bucket = self.gcs.bucket(task.bucket)
-            out_dir = tempfile.TemporaryDirectory(
+            temp_dir = tempfile.TemporaryDirectory(
                 prefix=f"thor_{task.job_id}_{task.task_id}",
-            ).name
-            os.makedirs(out_dir, exist_ok=True)
-            download_task_inputs_to_dir(bucket, task, out_dir)
+            )
+
+            input_dir = os.path.join(temp_dir.name, "inputs")
+            output_dir = os.path.join(temp_dir.name, "outputs")
+            os.makedirs(input_dir, exist_ok=True)
+            os.makedirs(output_dir, exist_ok=True)
+            cfg_path, obs_path, orbit_path = download_task_inputs_to_dir(
+                bucket,
+                task,
+                input_dir,
+            )
             logger.debug("downloaded inputs")
 
-            observations_file_path = os.path.join(out_dir, "observations.csv")
-            orbits_file_path = os.path.join(out_dir, "orbit.csv")
-            config_file_path = os.path.join(out_dir, "config.yml")
             logger.info(
                 "beginning execution for job %s, task %s", task.job_id, task.task_id
             )
@@ -380,14 +385,14 @@ class Worker:
             from thor.config import Config
 
             observations = pd.read_csv(
-                "{observations_file_path}",
+                "{obs_path}",
                 index_col=False,
                 dtype={{"obs_id": str}},
             )
 
-            test_orbits = Orbits.from_csv("{orbits_file_path}")
+            test_orbits = Orbits.from_csv("{orbit_path}")
 
-            config = Config.fromYaml("{config_file_path}")
+            config = Config.fromYaml("{cfg_path}")
 
             runTHOR(
                 observations,
@@ -397,7 +402,7 @@ class Worker:
                 iod_config=config.IOD_CONFIG,
                 od_config=config.OD_CONFIG,
                 odp_config=config.ODP_CONFIG,
-                out_dir="{out_dir}",
+                out_dir="{output_dir}",
                 logging_level=logging.INFO,
             )
             """
@@ -422,7 +427,7 @@ class Worker:
                 output += line
 
             return_code = process.wait()
-            with open(os.path.join(out_dir, "captured_output.txt"), "wb") as f:
+            with open(os.path.join(output_dir, "captured_output.txt"), "wb") as f:
                 f.write(output)
 
             if return_code != 0:
@@ -436,11 +441,11 @@ class Worker:
                     output=output,
                 )
             else:
-                self.mark_task_succeeded(task, bucket, out_dir)
+                self.mark_task_succeeded(task, bucket, output_dir)
 
         except Exception as e:
             logger.error("task %s failed", task.task_id, exc_info=e)
-            self.mark_task_failed(task, bucket, out_dir, e)
+            self.mark_task_failed(task, bucket, output_dir, e)
 
         finally:
             updated_manifest = mark_task_done_in_manifest(
