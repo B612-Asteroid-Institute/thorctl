@@ -72,7 +72,7 @@ def _thor_invocation(
     script = f"""
 import pandas as pd
 import logging
-from thor import runTHOR
+from thor.main import runTHOROrbit
 from thor.orbits import Orbits
 from thor.config import Config
 
@@ -86,7 +86,7 @@ test_orbits = Orbits.from_csv("{orbit_path}")
 
 config = Config.fromYaml("{cfg_path}")
 
-runTHOR(
+runTHOROrbit(
     observations,
     test_orbits,
     range_shift_config=config.RANGE_SHIFT_CONFIG,
