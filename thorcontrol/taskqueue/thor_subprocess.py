@@ -69,33 +69,33 @@ def _thor_invocation(
     Returns the command line arguments used to run THOR.
     """
     script = f"""
-    import pandas as pd
-    import logging
-    from thor import runTHOR
-    from thor.orbits import Orbits
-    from thor.config import Config
+import pandas as pd
+import logging
+from thor import runTHOR
+from thor.orbits import Orbits
+from thor.config import Config
 
-    observations = pd.read_csv(
-        "{obs_path}",
-        index_col=False,
-        dtype={{"obs_id": str}},
-    )
+observations = pd.read_csv(
+    "{obs_path}",
+    index_col=False,
+    dtype={{"obs_id": str}},
+)
 
-    test_orbits = Orbits.from_csv("{orbit_path}")
+test_orbits = Orbits.from_csv("{orbit_path}")
 
-    config = Config.fromYaml("{cfg_path}")
+config = Config.fromYaml("{cfg_path}")
 
-    runTHOR(
-        observations,
-        test_orbits,
-        range_shift_config=config.RANGE_SHIFT_CONFIG,
-        cluster_link_config=config.CLUSTER_LINK_CONFIG,
-        iod_config=config.IOD_CONFIG,
-        od_config=config.OD_CONFIG,
-        odp_config=config.ODP_CONFIG,
-        out_dir="{output_dir}",
-        logging_level=logging.INFO,
-    )
+runTHOR(
+    observations,
+    test_orbits,
+    range_shift_config=config.RANGE_SHIFT_CONFIG,
+    cluster_link_config=config.CLUSTER_LINK_CONFIG,
+    iod_config=config.IOD_CONFIG,
+    od_config=config.OD_CONFIG,
+    odp_config=config.ODP_CONFIG,
+    out_dir="{output_dir}",
+    logging_level=logging.INFO,
+)
     """
     return ["python", "-c", script]
 
