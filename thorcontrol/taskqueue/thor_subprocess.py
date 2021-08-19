@@ -1,41 +1,65 @@
 # Module for running THOR in a subprocess.
+import asyncio
 import logging
 import os.path
-import subprocess
 import sys
 from typing import List
 
 logger = logging.getLogger("thor")
 
 
-def run_thor_subprocess(input_dir: str, output_dir: str):
+async def run_thor_subprocess(input_dir: str, output_dir: str, timeout: int):
     cfg_path = os.path.join(input_dir, "config.yml")
     obs_path = os.path.join(input_dir, "observations.csv")
     orbit_path = os.path.join(input_dir, "orbit.csv")
 
     args = _thor_invocation(cfg_path, obs_path, orbit_path, output_dir)
 
-    # Use subprocess.Popen rathen than subprocess.run just so we get a
-    # bit more control on output. Doing things carefully lets us stream
-    # the process's output through, which lets it appear in logs.
-    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = await asyncio.subprocess.create_subprocess_exec(
+        *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
 
-    # TODO: Would be nice to set a timeout. But it's trickier than it
-    # might appear, if we also want to capture output, since that
-    # blocks on the read call. We need to do something like
-    # select.poll() to get that right.
+    captured_stdout = b""
+    captured_stderr = b""
 
-    output = b""
-    for line in process.stdout:  # type:ignore
-        sys.stdout.write(line.decode("utf8"))
-        output += line
+    async def copy_stdout():
+        nonlocal captured_stdout
+        while True:
+            line = await process.stdout.readline()
+            if line == b"":
+                return
+            captured_stdout += line
+            sys.stdout.write(line.decode("utf8"))
 
-    return_code = process.wait()
-    with open(os.path.join(output_dir, "captured_output.txt"), "wb") as f:
-        f.write(output)
+    async def copy_stderr():
+        nonlocal captured_stderr
+        while True:
+            line = await process.stderr.readline()
+            if line == b"":
+                return
+            captured_stderr += line
+            sys.stderr.write(line.decode("utf8"))
+
+    all_done = asyncio.wait([copy_stderr(), copy_stdout(), process.wait()])
+    try:
+        await asyncio.wait_for(all_done, timeout=timeout)
+    except asyncio.TimeoutError as e:
+        process.kill()
+        raise TimeoutExceeded() from e
+
+    return_code = process.returncode
+    assert return_code is not None
+
+    with open(os.path.join(output_dir, "stdout.txt"), "wb") as f:
+        f.write(captured_stdout)
+    with open(os.path.join(output_dir, "stderr.txt"), "wb") as f:
+        f.write(captured_stderr)
+    with open(os.path.join(output_dir, "returncode.txt"), "wb") as f:
+        code_txt = str(return_code).encode("utf8")
+        f.write(code_txt)
 
     if return_code != 0:
-        raise THORExecutionFailure()
+        raise THORExecutionFailure(return_code, captured_stdout, captured_stderr)
 
 
 def _thor_invocation(
@@ -77,5 +101,11 @@ def _thor_invocation(
 
 
 class THORExecutionFailure(Exception):
-    def __init__(self):
-        pass
+    def __init__(self, retcode: int, stdout: bytes, stderr: bytes):
+        self.retcode = retcode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+class TimeoutExceeded(Exception):
+    pass
