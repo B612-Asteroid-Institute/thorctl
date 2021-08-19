@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import uuid
 
 import google.cloud.exceptions
 import pandas as pd
@@ -82,9 +83,18 @@ def parse_args():
         default=5.0,
         help="time in seconds between checking whether there are more tasks available",
     )
+    parser.add_argument(
+        "--job-id",
+        type=str,
+        default="<randomly generated>",
+        help="ID to use for the job that will be created",
+    )
     args = parser.parse_args()
     if args.rabbit_password == "$RABBIT_PASSWORD env var":
         args.rabbit_password = os.environ["RABBIT_PASSWORD"]
+
+    if args.job_id == "<randomly generated>":
+        args.job_id = uuid.uuid4()
 
     return args
 
@@ -168,6 +178,7 @@ def main():
         config=config,
         observations=preprocessed_observations,
         orbits=test_orbits,
+        job_id=args.job_id,
         job_completion_pubsub_topic=args.pubsub_topic,
     )
     taskqueue_client.monitor_job_status(manifest.job_id)
