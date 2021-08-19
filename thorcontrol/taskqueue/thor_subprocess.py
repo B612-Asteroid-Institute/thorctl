@@ -1,5 +1,6 @@
 # Module for running THOR in a subprocess.
 import asyncio
+import io
 import logging
 import os.path
 import sys
@@ -19,25 +20,23 @@ async def run_thor_subprocess(input_dir: str, output_dir: str, timeout: int):
         *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
 
-    captured_stdout = b""
-    captured_stderr = b""
+    captured_stdout = io.BytesIO()
+    captured_stderr = io.BytesIO()
 
     async def copy_stdout():
-        nonlocal captured_stdout
         while True:
             line = await process.stdout.readline()
             if line == b"":
                 return
-            captured_stdout += line
+            captured_stdout.write(line)
             sys.stdout.write(line.decode("utf8"))
 
     async def copy_stderr():
-        nonlocal captured_stderr
         while True:
             line = await process.stderr.readline()
             if line == b"":
                 return
-            captured_stderr += line
+            captured_stderr.write(line)
             sys.stderr.write(line.decode("utf8"))
 
     all_done = asyncio.wait([copy_stderr(), copy_stdout(), process.wait()])
@@ -51,15 +50,17 @@ async def run_thor_subprocess(input_dir: str, output_dir: str, timeout: int):
     assert return_code is not None
 
     with open(os.path.join(output_dir, "stdout.txt"), "wb") as f:
-        f.write(captured_stdout)
+        f.write(captured_stdout.getvalue())
     with open(os.path.join(output_dir, "stderr.txt"), "wb") as f:
-        f.write(captured_stderr)
+        f.write(captured_stderr.getvalue())
     with open(os.path.join(output_dir, "returncode.txt"), "wb") as f:
         code_txt = str(return_code).encode("utf8")
         f.write(code_txt)
 
     if return_code != 0:
-        raise THORExecutionFailure(return_code, captured_stdout, captured_stderr)
+        raise THORExecutionFailure(
+            return_code, captured_stdout.getvalue(), captured_stderr.getvalue()
+        )
 
 
 def _thor_invocation(
