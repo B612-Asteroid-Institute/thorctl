@@ -96,6 +96,7 @@ runTHOR(
     odp_config=config.ODP_CONFIG,
     out_dir="{output_dir}",
     logging_level=logging.INFO,
+    if_exists="erase",
 )
     """
     return ["python", "-c", script]
