@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import os.path
@@ -372,7 +373,7 @@ class Worker:
             logger.info(
                 "beginning execution for job %s, task %s", task.job_id, task.task_id
             )
-            run_thor_subprocess(input_dir, output_dir, timeout=60)
+            asyncio.run(run_thor_subprocess(input_dir, output_dir, timeout=60))
             self.mark_task_succeeded(task, bucket, output_dir)
 
         except Exception as e:
