@@ -2,7 +2,8 @@ name: deploy
 on:
   push:
     branches:
-      - main
+      - staging
+      - production
 
 jobs:
   deploy:
@@ -17,7 +18,6 @@ jobs:
     - name: Tag built image
       run: |
         docker tag thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:$GITHUB_SHA
-        docker tag thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
 
     - name: Set up cloud SDK
       uses: google-github-actions/setup-gcloud@master
@@ -30,11 +30,26 @@ jobs:
       run: |
         gcloud auth configure-docker
 
-    - name: Push image
+    - name: Push image to repository
       run: |
-        docker push gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
         docker push gcr.io/moeyens-thor-dev/thorctl:$GITHUB_SHA
 
-    - name: Update autoscaler
+    # Production deploy when the branch is production
+    - name: Push image to production
+      if: ${{ github.ref == 'refs/heads/production' }}
       run: |
-        infra/autoscaler/update.sh
+        docker push gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
+    - name: Update production autoscaler
+      if: ${{ github.ref == 'refs/heads/production' }}
+      run: |
+        infra/autoscaler/update.sh production
+
+    # Staging deploy when the branch is staging
+    - name: Push image to staging
+      if: ${{ github.ref == 'refs/heads/staging' }}
+      run: |
+        docker push gcr.io/moeyens-thor-dev/thorctl:staging-tasks-latest
+    - name: Update staging autoscaler
+      if: ${{ github.ref == 'refs/heads/staging' }}
+      run: |
+        infra/autoscaler/update.sh staging
