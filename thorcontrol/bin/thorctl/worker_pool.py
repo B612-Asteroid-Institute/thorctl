@@ -209,6 +209,26 @@ runcmd:
         )
         return s[len(prefix) :]
 
+    def get_status(self, worker: dict) -> str:
+        # Not yet implemented
+        return "UNKNOWN"
+
+    def get_current_job(self, worker: dict) -> str:
+        # Not yet implemented
+        return "UNKNOWN"
+
+    def get_current_task(self, worker: dict) -> str:
+        # Not yet implemented
+        return "UNKNOWN"
+
+    def get_thor_version(self, worker: dict) -> str:
+        # Not yet implemented
+        return "UNKNOWN"
+
+    def get_thorctl_version(self, worker: dict) -> str:
+        # Not yet implemented
+        return "UNKNOWN"
+
 
 def worker_labels(queue_name: str) -> Mapping[str, str]:
     return {
