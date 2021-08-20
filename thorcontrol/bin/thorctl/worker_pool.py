@@ -4,6 +4,9 @@ import string
 from typing import Dict, List, Mapping, Optional
 
 import googleapiclient.discovery
+import thor.version
+
+import thorcontrol.version
 
 SERVICE_ACCOUNT_EMAIL = "thor-worker@moeyens-thor-dev.iam.gserviceaccount.com"
 DEFAULT_PROJECT = "moeyens-thor-dev"
@@ -109,7 +112,15 @@ runcmd:
 - systemctl daemon-reload
 - systemctl start thor-worker.service
 """
-        metadata = {"items": [{"key": "user-data", "value": cloud_init_config}]}
+        metadata = {
+            "items": [
+                {"key": "user-data", "value": cloud_init_config},
+                {"key": "thor-job", "value": "none"},
+                {"key": "thor-task", "value": "none"},
+                {"key": "thor-version", "value": thor.version.__version__},
+                {"key": "thorctl-version", "value": thorcontrol.version.__version__},
+            ]
+        }
 
         machine = f"zones/{zone}/machineTypes/{machine_type}"
         req = {
