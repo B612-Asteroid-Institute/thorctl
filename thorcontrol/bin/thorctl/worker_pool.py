@@ -237,3 +237,13 @@ def rand_str(length: int) -> str:
     """
 
     return "".join(random.choices(string.ascii_lowercase, k=length))
+
+
+def _get_external_ip(instance_description: dict) -> Optional[str]:
+    networks = instance_description.get("networkInterfaces", [])
+    for net in networks:
+        access_configs = net.get("accessConfigs", [])
+        for ac in access_configs:
+            if ac.get("natIP", None) is not None:
+                return ac["natIP"]
+    return None
