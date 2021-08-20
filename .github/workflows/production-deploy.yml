@@ -27,12 +27,9 @@ jobs:
       run: |
         gcloud auth configure-docker
 
-    - name: Push image to repository
-      run: |
-        docker push gcr.io/moeyens-thor-dev/thorctl:$GITHUB_SHA
-
     - name: Push image to production
       run: |
+        docker tag thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
         docker push gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
     - name: Update production autoscaler
       run: |
