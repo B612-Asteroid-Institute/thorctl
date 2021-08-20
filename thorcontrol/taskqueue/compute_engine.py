@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import Any
+from typing import Any, Dict, List
 
 import googleapiclient.discovery
 import requests
@@ -42,6 +42,77 @@ def terminate_self():
     compute_client.zoneOperations().wait(
         project=project, zone=zone, operation=operation["name"]
     ).execute()
+
+
+def update_self_metadata(keyvals: Dict[str, str]):
+    """Calls update_instance_metadata on the currently-running instance."""
+    name = discover_instance_name()
+    zone_url = discover_instance_zone()
+    zone = zone_url.split("/")[-1]
+    project = discover_project_id()
+    logger.debug(
+        "identity inference done. name=%s  zone=%s  project=%s", name, zone, project
+    )
+    update_instance_metadata(project, zone, name, keyvals)
+
+
+def update_instance_metadata(
+    project: str, zone: str, name: str, keyvals: Dict[str, str]
+):
+    """
+    Updates a running instance's metadata, setting the given key-value pairs.
+
+    If any of the keys are already present in the instance's metadata, they are
+    modified. Any metadata not present in keyvals is left unchanged.
+    """
+
+    with googleapiclient.discovery.build("compute", "v1") as client:
+        # Retrieve the current metadata so we only update the job, task and
+        # status keys. Everything else should be left unchanged.
+        instance = client.instances().get(project=project, zone=zone, instance=name)
+        fingerprint = instance["metadata"]["fingerprint"]
+        metadata = instance["metadata"]["items"]
+
+        metadata = _update_metadata_list(metadata, keyvals)
+
+        logger.info("updating instance metadata to %s", keyvals)
+        operation = (
+            client.instances()
+            .setMetadata(
+                project=project,
+                zone=zone,
+                instance=instance,
+                fingerprint=fingerprint,
+                items=metadata,
+            )
+            .execute()
+        )
+
+        logger.debug("waiting for instance metadata update to complete")
+        client.zoneOperations().wait(
+            project=project, zone=zone, operation=operation["name"]
+        ).execute()
+
+
+def _update_metadata_list(
+    metadata: List[Dict[str, str]], updates: Dict[str, str]
+) -> List[Dict[str, str]]:
+    """
+    Update a google instance metadata-style list of key-value pairs with the
+    values in updates.
+    """
+    updated = set()
+    for item in metadata:
+        key = item["key"]
+        if key in updates:
+            item["value"] = updates[key]
+            updated.add(key)
+
+    for key, value in updates.items():
+        if key not in updated:
+            metadata.append({"key": key, "value": value})
+
+    return metadata
 
 
 def _google_metadata_request(path: str) -> Any:
