@@ -1,14 +1,35 @@
 #!/bin/bash
 set -xeuo pipefail
 
-echo "Checking for existing autoscaler..."
-if gcloud compute instances list --zones=us-west1-a | grep -q 'thor-autoscaler-production'; then
+environment=$1
+
+case $environment in
+
+    staging)
+        instance_name=thor-autoscaler-staging
+        config_name=staging-cloudconfig
+        queue_name=production-tasks
+        ;;
+
+    production)
+        instance_name=thor-autoscaler-production
+        config_name=production-cloudconfig
+        queue_name=staging-tasks
+        ;;
+
+    *)
+        echo "Invalid environment $environment (valid options are 'staging' or 'production')"
+        exit 1
+        ;;
+esac
+
+echo "Checking for existing $environment autoscaler..."
+if gcloud compute instances list --zones=us-west1-a | grep -q $instance_name; then
     echo "Bringing down existing autoscaler..."
-    gcloud compute instances delete thor-autoscaler-production \
-           --zone=us-west1-a
+    gcloud compute instances delete $instance_name --zone=us-west1-a
 fi
 
-echo "Bringing up new autoscaler..."
+echo "Bringing up new $environment autoscaler..."
 
 # Create the autoscaler using the configuration file ('production-cloudconfig')
 # in the same directory as this script.
@@ -16,10 +37,10 @@ echo "Bringing up new autoscaler..."
 # Magic one-liner to get the directory containing this script:
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 # Now we can get the path of the config file:
-CONFIG_FILE=${SCRIPT_DIR}/production-cloudconfig
+CONFIG_FILE=${SCRIPT_DIR}/${config_name}
 
-gcloud compute instances create thor-autoscaler-production \
-       --description="THOR autoscaler for the production queue" \
+gcloud compute instances create $instance_name \
+       --description="THOR autoscaler for the $queue_name queue" \
        --machine-type=e2-small \
        --service-account="thor-autoscaler@moeyens-thor-dev.iam.gserviceaccount.com" \
        --zone=us-west1-a \
