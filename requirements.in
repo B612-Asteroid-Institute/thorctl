@@ -8,3 +8,4 @@ google-cloud-secret-manager
 google-api-python-client
 colorama
 paramiko
+rich
