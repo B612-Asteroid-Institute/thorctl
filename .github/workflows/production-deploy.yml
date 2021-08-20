@@ -1,0 +1,12 @@
+name: production-deploy
+on:
+  release:
+    types: [released]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: ./.github/actions/deploy
+      with:
+        environment: production

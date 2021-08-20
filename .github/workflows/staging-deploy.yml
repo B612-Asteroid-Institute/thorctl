@@ -1,0 +1,12 @@
+name: staging-deploy
+on:
+  release:
+    types: [prereleased]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: ./.github/actions/deploy
+      with:
+        environment: staging
