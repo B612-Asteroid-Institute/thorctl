@@ -7,7 +7,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v2
     - name: Build thorctl docker image
       run: |
         docker build -t thorctl:$GITHUB_SHA .
