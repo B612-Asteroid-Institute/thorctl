@@ -45,11 +45,11 @@ jobs:
         infra/autoscaler/update.sh production
 
     # Staging deploy when the branch is staging
-    - name: Update staging autoscaler
-      if: ${{ github.ref == 'refs/heads/staging' }}
-      run: |
-        infra/autoscaler/update.sh staging
     - name: Push image to staging
       if: ${{ github.ref == 'refs/heads/staging' }}
       run: |
         docker push gcr.io/moeyens-thor-dev/thorctl:staging-tasks-latest
+    - name: Update staging autoscaler
+      if: ${{ github.ref == 'refs/heads/staging' }}
+      run: |
+        infra/autoscaler/update.sh staging
