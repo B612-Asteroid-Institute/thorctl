@@ -1,0 +1,39 @@
+#cloud-config
+
+users:
+- name: thor-autoscaler
+  uid: 2000
+
+write_files:
+- path: /etc/systemd/system/thor-autoscaler.service
+  permissions: 0644
+  owner: root
+  content: |
+    [Unit]
+    Description=THOR Autoscaler
+    Wants=gcr-online.target
+    After=gcr-online.target
+
+    [Service]
+    Restart=always
+    Environment="HOME=/home/thor-autoscaler"
+    ExecStartPre=/usr/bin/docker-credential-gcr configure-docker && \
+        docker pull gcr.io/moeyens-thor-dev/thorctl:staging-tasks-latest
+    ExecStart=/usr/bin/docker run --rm \
+                        --name thor-autoscaler \
+                        --net=host \
+                        --env THOR_AUTOSCALED_QUEUES=staging-tasks \
+                        gcr.io/moeyens-thor-dev/thorctl:staging-tasks-latest \
+                        thorctl autoscale \
+                            --max-size=8 \
+                            --machine-type=c2-standard-8 \
+                            --rabbit-password-from-secret-manager staging-tasks
+    ExecStop=/usr/bin/docker stop thor-autoscaler
+    ExecStopPost=/usr/bin/docker rm thor-autoscaler
+
+    [Install]
+    WantedBy=multi-user.target
+
+runcmd:
+- systemctl daemon-reload
+- systemctl start thor-autoscaler.service
