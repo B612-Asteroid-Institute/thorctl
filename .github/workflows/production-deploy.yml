@@ -8,14 +8,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build thorctl docker image
+    - name: Build or pull thorctl docker image
       run: |
-        docker build -t thorctl:$GITHUB_SHA .
-
-    - name: Tag build image
-      run: |
-        docker tag thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:$GITHUB_SHA
-
+        docker pull gcr.io/moeyens-thor-dev/thorctl:${{ github.sha }} || true
+        if docker images gcr.io/moeyens-thor-dev/thorctl:${{ github.sha }} | grep -q "${{ github.sha }}"; then
+            echo "Docker pull succeeded"
+        else
+            echo "Building docker image"
+            docker build -t gcr.io/moeyens-thor-dev/thorctl:${{ github.sha }}
+        fi
     - name: Set up cloud SDK
       uses: google-github-actions/setup-gcloud@master
       with:
@@ -29,7 +30,7 @@ jobs:
 
     - name: Push image to production
       run: |
-        docker tag thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
+        docker tag gcr.io/moeyens-thor/dev/thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
         docker push gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
     - name: Update production autoscaler
       run: |

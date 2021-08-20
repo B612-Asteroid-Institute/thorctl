@@ -31,7 +31,7 @@ jobs:
 
     - name: Push image to staging
       run: |
-        docker tag thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:staging-tasks-latest
+        docker tag gcr.io/moeyens-thor-dev/thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:staging-tasks-latest
         docker push gcr.io/moeyens-thor-dev/thorctl:staging-tasks-latest
     - name: Update production autoscaler
       run: |
