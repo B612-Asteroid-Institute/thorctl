@@ -11,7 +11,7 @@ jobs:
 
     - name: Build thorctl docker image
       run: |
-        docker build -t thorctl .
+        docker build -t thorctl:${{ github.sha }} .
 
     - name: Set up cloud SDK
       uses: google-github-actions/setup-gcloud@master
