@@ -45,7 +45,7 @@ jobs:
         fi
     - name: Push image to production
       run: |
-        docker tag gcr.io/moeyens-thor/dev/thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
+        docker tag gcr.io/moeyens-thor-dev/thorctl:${{ github.sha }} gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
         docker push gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
     - name: Update production autoscaler
       run: |
