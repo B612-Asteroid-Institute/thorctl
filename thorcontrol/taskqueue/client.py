@@ -492,6 +492,7 @@ class Worker:
         while True:
             try:
                 compute_engine.update_self_metadata(metadata)
+                return
             except Exception as e:
                 if n_attempts >= 5:
                     raise (e)
