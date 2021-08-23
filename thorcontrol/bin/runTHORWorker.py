@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument(
         "--idle-shutdown-timeout",
         type=int,
-        default=60,
+        default=900,
         help="""maximum idle time in seconds. If negative, continue forever. If this time
         elapses, the program exits, and on Google Compute Engine it also
         terminates the running instance.""",
