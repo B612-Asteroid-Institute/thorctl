@@ -1,7 +1,8 @@
 name: production-deploy
 on:
-  release:
-    types: [released]
+  push:
+    branches:
+      - release/production
 
 jobs:
   deploy:
@@ -9,6 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+
+    - uses: chrnorm/deployment-action@releases/v1
+      name: Create GitHub deployment
+      id: deployment
+      with:
+        token: "${{ github.token }}"
+        environment: production
+
     - name: Set up cloud SDK
       uses: google-github-actions/setup-gcloud@master
       with:
@@ -36,3 +45,19 @@ jobs:
     - name: Update production autoscaler
       run: |
         infra/autoscaler/update.sh production
+
+    - name: Mark deployment a success
+      if: success()
+      uses: chrnorm/deployment-status@releases/v1
+      with:
+        token: "${{ github.token }}"
+        state: success
+        deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+
+    - name: Mark deployment a failure
+      if: failure()
+      uses: chrnorm/deployment-status@releases/v1
+      with:
+        token: "${{ github.token }}"
+        state: success
+        deployment_id: ${{ steps.deployment.outputs.deployment_id }}
