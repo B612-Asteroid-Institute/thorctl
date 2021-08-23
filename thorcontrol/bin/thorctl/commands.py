@@ -5,10 +5,12 @@ from typing import List, Optional
 
 import pika
 from google.cloud.secretmanager_v1 import SecretManagerServiceClient
+from rich.console import Console
+from rich.table import Table
 
 from .autoscaler import Autoscaler
 from .sshconn import WorkerPoolSSHConnection
-from .worker_pool import WorkerPoolManager
+from .worker_pool import WorkerPoolManager, _get_external_ip
 
 logger = logging.getLogger("thorctl")
 
@@ -34,6 +36,8 @@ def dispatch(parser, args):
             args.rabbit_password,
             args.rabbit_password_from_secret_manager,
         )
+    elif args.command == "list-workers":
+        list_workers(args.queue)
     elif args.command is None:
         parser.print_usage()
     else:
@@ -61,6 +65,15 @@ def parse_args():
         "size", help="look up the current number of workers"
     )
     check_size.add_argument(
+        "queue",
+        type=str,
+        help="name of the queue that workers are listening to",
+    )
+
+    list_workers = subparsers.add_parser(
+        "list-workers", help="list the workers in a queue and what they're doing"
+    )
+    list_workers.add_argument(
         "queue",
         type=str,
         help="name of the queue that workers are listening to",
@@ -206,3 +219,42 @@ def autoscale(
     )
     scaler = Autoscaler(rabbit_params, queues, max_size, machine_type)
     scaler.run(poll_interval)
+
+
+def list_workers(queue_name: str):
+    """List what all the workers are doing in a particular queue"""
+
+    console = Console()
+
+    manager = WorkerPoolManager(queue_name)
+    table = Table(title=f"{queue_name} workers")
+    table.add_column("name")
+    table.add_column("ip")
+    table.add_column("job")
+    table.add_column("task")
+    table.add_column("thor version")
+    table.add_column("thorctl version")
+    with console.status("contacting gcloud to list instances..."):
+        workers = manager.list_worker_instances()
+
+    if len(workers) == 0:
+        print(f"queue {queue_name} has no workers currently running in gcloud")
+
+    for w in workers:
+        name = w["name"]
+        with console.status("looking up status of {name}"):
+            ip = _get_external_ip(w)
+            current_job_id = manager.get_current_job(w)
+            current_task_id = manager.get_current_task(w)
+            thor_version = manager.get_thor_version(w)
+            thorctl_version = manager.get_thorctl_version(w)
+        table.add_row(
+            name,
+            ip,
+            current_job_id,
+            current_task_id,
+            thor_version,
+            thorctl_version,
+        )
+
+    console.print(table)

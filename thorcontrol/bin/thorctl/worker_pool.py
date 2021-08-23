@@ -1,9 +1,12 @@
 import logging
 import random
 import string
-from typing import Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import googleapiclient.discovery
+import thor.version
+
+import thorcontrol.version
 
 SERVICE_ACCOUNT_EMAIL = "thor-worker@moeyens-thor-dev.iam.gserviceaccount.com"
 DEFAULT_PROJECT = "moeyens-thor-dev"
@@ -109,7 +112,15 @@ runcmd:
 - systemctl daemon-reload
 - systemctl start thor-worker.service
 """
-        metadata = {"items": [{"key": "user-data", "value": cloud_init_config}]}
+        metadata = {
+            "items": [
+                {"key": "user-data", "value": cloud_init_config},
+                {"key": "thor-job", "value": "none"},
+                {"key": "thor-task", "value": "none"},
+                {"key": "thor-version", "value": thor.version.__version__},
+                {"key": "thorctl-version", "value": thorcontrol.version.__version__},
+            ]
+        }
 
         machine = f"zones/{zone}/machineTypes/{machine_type}"
         req = {
@@ -209,6 +220,41 @@ runcmd:
         )
         return s[len(prefix) :]
 
+    @staticmethod
+    def _get_metadata_value(key: str, metadata: Any) -> Optional[str]:
+        for item in metadata["items"]:
+            if item["key"] == key:
+                return item["value"]
+        return None
+
+    def get_current_job(self, worker: dict) -> str:
+        # Not yet implemented
+        val = self._get_metadata_value("thor-job", worker["metadata"])
+        if val is None:
+            return "UNKNOWN"
+        return val
+
+    def get_current_task(self, worker: dict) -> str:
+        # Not yet implemented
+        val = self._get_metadata_value("thor-task", worker["metadata"])
+        if val is None:
+            return "UNKNOWN"
+        return val
+
+    def get_thor_version(self, worker: dict) -> str:
+        # Not yet implemented
+        val = self._get_metadata_value("thor-version", worker["metadata"])
+        if val is None:
+            return "UNKNOWN"
+        return val
+
+    def get_thorctl_version(self, worker: dict) -> str:
+        # Not yet implemented
+        val = self._get_metadata_value("thorctl-version", worker["metadata"])
+        if val is None:
+            return "UNKNOWN"
+        return val
+
 
 def worker_labels(queue_name: str) -> Mapping[str, str]:
     return {
@@ -237,3 +283,13 @@ def rand_str(length: int) -> str:
     """
 
     return "".join(random.choices(string.ascii_lowercase, k=length))
+
+
+def _get_external_ip(instance_description: dict) -> Optional[str]:
+    networks = instance_description.get("networkInterfaces", [])
+    for net in networks:
+        access_configs = net.get("accessConfigs", [])
+        for ac in access_configs:
+            if ac.get("natIP", None) is not None:
+                return ac["natIP"]
+    return None

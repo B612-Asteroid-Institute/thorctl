@@ -6,7 +6,7 @@ import colorama
 import paramiko.client
 import paramiko.ssh_exception
 
-from .worker_pool import WorkerPoolManager
+from .worker_pool import WorkerPoolManager, _get_external_ip
 
 logger = logging.getLogger("thorctl")
 
@@ -325,16 +325,6 @@ class WorkerSSHConnection:
             self._read_buffer = self._read_buffer[(next_linebreak + 1) :]
             yield line.decode()
             next_linebreak = self._read_buffer.find(b"\n")
-
-
-def _get_external_ip(instance_description: dict) -> Optional[str]:
-    networks = instance_description.get("networkInterfaces", [])
-    for net in networks:
-        access_configs = net.get("accessConfigs", [])
-        for ac in access_configs:
-            if ac.get("natIP", None) is not None:
-                return ac["natIP"]
-    return None
 
 
 class _IgnoreMissingHostKeys(paramiko.client.MissingHostKeyPolicy):

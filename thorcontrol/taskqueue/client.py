@@ -1,7 +1,6 @@
 import logging
 import tempfile
 import time
-import uuid
 from typing import Iterator, Mapping, Optional
 
 import pandas as pd
@@ -309,6 +308,10 @@ class Worker:
         while True:
             task = self.queue.receive()
             if task is None:
+                self.set_instance_metadata(
+                    job_id="none",
+                    task_id="none",
+                )
                 since_last_task = time.time() - last_task_time
                 logger.info("no tasks in queue (%s since last task)", since_last_task)
                 if 0 <= idle_shutdown_timeout < since_last_task:
@@ -320,6 +323,10 @@ class Worker:
             else:
                 logger.info(
                     "received task job_id=%s task_id=%s", task.job_id, task.task_id
+                )
+                self.set_instance_metadata(
+                    job_id=task.job_id,
+                    task_id=task.task_id,
                 )
                 bucket = self.gcs.bucket(task.bucket)
                 self.mark_in_progress(task, bucket)
@@ -463,3 +470,36 @@ class Worker:
             logger.info(
                 "Google Compute Engine not detected, nothing special to do for termination"
             )
+
+    def set_instance_metadata(self, job_id: str, task_id: str):
+        on_google_compute_engine = compute_engine.discover_running_on_compute_engine()
+        if not on_google_compute_engine:
+            return
+
+        logger.info(
+            "updating instance metadata  job_id=%s  task_id=%s",
+            job_id,
+            task_id,
+        )
+        metadata = {
+            "thor-job": job_id,
+            "thor-task": task_id,
+        }
+
+        # Attempt under a few retries because of rare races and the low quota
+        # for this API
+        n_attempts = 0
+        while True:
+            try:
+                compute_engine.update_self_metadata(metadata)
+                return
+            except Exception as e:
+                if n_attempts >= 5:
+                    raise (e)
+                logger.error(
+                    "metadata update failed! will retry in %s seconds",
+                    2 ** n_attempts,
+                    exc_info=e,
+                )
+                time.sleep(2 ** n_attempts)
+                n_attempts += 1
