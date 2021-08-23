@@ -147,3 +147,10 @@ run them manually like this:
 ```
 pre-commit run --all-files
 ```
+### Deploying updates
+
+Deploy new versions of thorctl workers using github actions. To deploy to
+production, click the 'run workflow' button here:
+https://github.com/B612-Asteroid-Institute/thorctl/actions/workflows/production-deploy.yml
+
+Likewise for deploys to staging: https://github.com/B612-Asteroid-Institute/thorctl/actions/workflows/staging-deploy.yml
