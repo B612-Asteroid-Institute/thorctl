@@ -9,10 +9,69 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: .github/actions/deploy
-      name: Deploy to production
+    - uses: chrnorm/deployment-action@releases/v1
+      name: Create GitHub deployment
+      id: deployment
       with:
+        token: "${{ github.token }}"
         environment: production
-        token: ${{ github.token }}
-        gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
-        gcp_service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Mark deployment in progress
+      uses: chrnorm/deployment-status@releases/v1
+      with:
+        token: "${{ github.token }}"
+        state: in_progress
+        deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+
+    - name: Set up cloud SDK
+      uses: google-github-actions/setup-gcloud@master
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+
+    - name: Log in to docker
+      run: |
+        gcloud auth configure-docker
+
+    - name: Build or pull thorctl docker image
+      run: |
+        docker pull gcr.io/moeyens-thor-dev/thorctl:${{ github.sha }} || true
+        if docker images gcr.io/moeyens-thor-dev/thorctl:${{ github.sha }} | grep -q "${{ github.sha }}"; then
+            echo "Docker pull succeeded"
+        else
+            echo "Building docker image"
+            docker build -t gcr.io/moeyens-thor-dev/thorctl:${{ github.sha }} .
+        fi
+    - name: Push image to production
+      run: |
+        docker tag gcr.io/moeyens-thor/dev/thorctl:$GITHUB_SHA gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
+        docker push gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest
+    - name: Update production autoscaler
+      run: |
+        infra/autoscaler/update.sh production
+
+    - name: Mark deployment a success
+      if: success()
+      uses: chrnorm/deployment-status@releases/v1
+      with:
+        token: "${{ github.token }}"
+        state: success
+        deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+
+    - name: Mark deployment a failure
+      if: failure()
+      uses: chrnorm/deployment-status@releases/v1
+      with:
+        token: "${{ github.token }}"
+        state: success
+        deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+
+    - name: Mark deployment cancelled
+      if: cancelled()
+      uses: chrnorm/deployment-status@releases/v1
+      with:
+        token: "${{ github.token }}"
+        state: error
+        description: "deployment was cancelled"
+        deployment_id: ${{ steps.deployment.outputs.deployment_id }}
