@@ -1,7 +1,7 @@
 import logging
 import random
 import string
-from typing import Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import googleapiclient.discovery
 import thor.version
@@ -220,25 +220,40 @@ runcmd:
         )
         return s[len(prefix) :]
 
-    def get_status(self, worker: dict) -> str:
-        # Not yet implemented
-        return "UNKNOWN"
+    @staticmethod
+    def _get_metadata_value(key: str, metadata: Any) -> Optional[str]:
+        for item in metadata["items"]:
+            if item["key"] == key:
+                return item["value"]
+        return None
 
     def get_current_job(self, worker: dict) -> str:
         # Not yet implemented
-        return "UNKNOWN"
+        val = self._get_metadata_value("thor-job", worker["metadata"])
+        if val is None:
+            return "UNKNOWN"
+        return val
 
     def get_current_task(self, worker: dict) -> str:
         # Not yet implemented
-        return "UNKNOWN"
+        val = self._get_metadata_value("thor-task", worker["metadata"])
+        if val is None:
+            return "UNKNOWN"
+        return val
 
     def get_thor_version(self, worker: dict) -> str:
         # Not yet implemented
-        return "UNKNOWN"
+        val = self._get_metadata_value("thor-version", worker["metadata"])
+        if val is None:
+            return "UNKNOWN"
+        return val
 
     def get_thorctl_version(self, worker: dict) -> str:
         # Not yet implemented
-        return "UNKNOWN"
+        val = self._get_metadata_value("thorctl-version", worker["metadata"])
+        if val is None:
+            return "UNKNOWN"
+        return val
 
 
 def worker_labels(queue_name: str) -> Mapping[str, str]:

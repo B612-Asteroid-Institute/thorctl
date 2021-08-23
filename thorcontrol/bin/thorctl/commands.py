@@ -230,7 +230,6 @@ def list_workers(queue_name: str):
     table = Table(title=f"{queue_name} workers")
     table.add_column("name")
     table.add_column("ip")
-    table.add_column("status")
     table.add_column("job")
     table.add_column("task")
     table.add_column("thor version")
@@ -245,7 +244,6 @@ def list_workers(queue_name: str):
         name = w["name"]
         with console.status("looking up status of {name}"):
             ip = _get_external_ip(w)
-            status = manager.get_status(w)
             current_job_id = manager.get_current_job(w)
             current_task_id = manager.get_current_task(w)
             thor_version = manager.get_thor_version(w)
@@ -253,7 +251,6 @@ def list_workers(queue_name: str):
         table.add_row(
             name,
             ip,
-            status,
             current_job_id,
             current_task_id,
             thor_version,
