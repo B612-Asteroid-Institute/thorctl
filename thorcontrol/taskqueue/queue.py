@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 import pika
 
@@ -115,3 +115,26 @@ class TaskQueueConnection:
             durable=True,
         )
         return response.method.message_count
+
+    def peek(self, n: int) -> Sequence[Task]:
+        """
+        Retrieve the next n tasks from the queue, and immediately re-enqueue them.
+        """
+        assert self.channel is not None
+        tasks = []
+        for i in range(n):
+            method, properties, body = self.channel.basic_get(
+                queue=self.queue_name,
+                auto_ack=False,
+            )
+            if method is None:
+                break
+            task = Task.from_msg(self.channel, method, properties, body)
+            tasks.append(task)
+
+        for task in tasks:
+            self.channel.basic_nack(
+                delivery_tag=task._delivery_tag,
+                requeue=True,
+            )
+        return tasks
