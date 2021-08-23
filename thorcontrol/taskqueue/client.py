@@ -501,3 +501,4 @@ class Worker:
                     exc_info=e,
                 )
                 time.sleep(2 ** n_attempts)
+                n_attempts += 1
