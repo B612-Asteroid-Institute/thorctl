@@ -78,14 +78,17 @@ def update_instance_metadata(
         metadata = _update_metadata_list(metadata, keyvals)
 
         logger.info("updating instance metadata to %s", keyvals)
+        request = {
+            "fingerprint": fingerprint,
+            "items": metadata,
+        }
         operation = (
             client.instances()
             .setMetadata(
                 project=project,
                 zone=zone,
                 instance=instance,
-                fingerprint=fingerprint,
-                items=metadata,
+                body=request,
             )
             .execute()
         )
