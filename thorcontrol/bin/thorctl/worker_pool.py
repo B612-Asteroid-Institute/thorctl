@@ -103,6 +103,7 @@ write_files:
     ExecStart=/usr/bin/docker run --rm \
                         --name thor-worker \
                         --net=host \
+                        --log-driver=gcplogs \
                         gcr.io/moeyens-thor-dev/thorctl:{self.queue_name}-latest \
                         run-thor-worker {self.queue_name} --rabbit-password-from-secret-manager
     ExecStop=/usr/bin/docker stop thor-worker
