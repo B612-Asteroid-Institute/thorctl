@@ -9,7 +9,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: .github/actions/deploy
+    - uses: ./.github/actions/deploy
       name: Deploy to staging
       with:
         environment: staging
