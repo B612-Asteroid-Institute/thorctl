@@ -8,6 +8,8 @@ from google.cloud.secretmanager_v1 import SecretManagerServiceClient
 from rich.console import Console
 from rich.table import Table
 
+from thorcontrol.taskqueue.queue import TaskQueueConnection
+
 from .autoscaler import Autoscaler
 from .sshconn import WorkerPoolSSHConnection
 from .worker_pool import WorkerPoolManager, _get_external_ip
@@ -38,6 +40,15 @@ def dispatch(parser, args):
         )
     elif args.command == "list-workers":
         list_workers(args.queue)
+    elif args.command == "list-tasks":
+        list_tasks(
+            args.queue,
+            args.rabbit_host,
+            args.rabbit_port,
+            args.rabbit_username,
+            args.rabbit_password,
+            args.rabbit_password_from_secret_manager,
+        )
     elif args.command is None:
         parser.print_usage()
     else:
@@ -142,6 +153,41 @@ def parse_args():
         help="load rabbit password from google secret manager",
     )
 
+    list_tasks = subparsers.add_parser(
+        "list-tasks", help="list active and pending tasks in a queue"
+    )
+    list_tasks.add_argument(
+        "queue",
+        type=str,
+        help="name of the queue",
+    )
+    list_tasks.add_argument(
+        "--rabbit-host",
+        type=str,
+        default="rabbit.c.moeyens-thor-dev.internal",
+        help="hostname of the rabbit broker",
+    )
+    list_tasks.add_argument(
+        "--rabbit-port", type=int, default=5672, help="port of the rabbit broker"
+    )
+    list_tasks.add_argument(
+        "--rabbit-username",
+        type=str,
+        default="thor",
+        help="username to connect with to the rabbit broker",
+    )
+    list_tasks.add_argument(
+        "--rabbit-password",
+        type=str,
+        default="$RABBIT_PASSWORD env var",
+        help="password to connect with to the rabbit broker",
+    )
+    list_tasks.add_argument(
+        "--rabbit-password-from-secret-manager",
+        action="store_true",
+        help="load rabbit password from google secret manager",
+    )
+
     return parser, parser.parse_args()
 
 
@@ -221,9 +267,88 @@ def autoscale(
     scaler.run(poll_interval)
 
 
+def list_tasks(
+    queue_name: str,
+    rabbit_host: str,
+    rabbit_port: int,
+    rabbit_username: str,
+    rabbit_password: Optional[str],
+    rabbit_password_from_secret_manager: bool,
+):
+    """List all the tasks that are currently being handled, or unhandled so far, in the queue"""
+
+    console = Console()
+
+    table = Table(title=f"{queue_name} tasks")
+    table.add_column("job-id")
+    table.add_column("task-id")
+    table.add_column("status")
+    table.add_column("worker-name")
+    if rabbit_password == "$RABBIT_PASSWORD env var":
+        rabbit_password = os.environ.get("RABBIT_PASSWORD")
+    if rabbit_password is None and rabbit_password_from_secret_manager:
+        client = SecretManagerServiceClient()
+        response = client.access_secret_version(
+            name="projects/moeyens-thor-dev/secrets/rabbitmq-password/versions/latest"
+        )
+        rabbit_password = response.payload.data.decode("utf8")
+
+    rabbit_params = pika.ConnectionParameters(
+        host=rabbit_host,
+        port=rabbit_port,
+        credentials=pika.PlainCredentials(
+            username=rabbit_username,
+            password=rabbit_password,
+        ),
+    )
+
+    # First, gather all the pending tasks. Then, gather all the in-progress
+    # tasks. It's possible that a task moves from pending to in-progress while
+    # we're executing. If this happens, we should only print the task once.
+    with console.status("connecting to rabbitmq to peek at tasks..."):
+        queue_conn = TaskQueueConnection(rabbit_params, queue_name)
+        queue_conn.connect()
+    with console.status("getting count of tasks in queue..."):
+        n_tasks_pending = queue_conn.size()
+    with console.status("peeking at tasks in queue..."):
+        pending_tasks = queue_conn.peek(n_tasks_pending)
+    with console.status("shutting down queue connection..."):
+        queue_conn.close()
+
+    manager = WorkerPoolManager(queue_name)
+    with console.status("contacting gcloud to list instances handling active tasks..."):
+        workers = manager.list_worker_instances()
+
+    # Keep a set of the active task IDs, so we can avoid double-printing if
+    # they also appear in the pending list.
+    active_tasks = set()
+    for w in workers:
+        name = w["name"]
+        current_job_id = manager.get_current_job(w)
+        current_task_id = manager.get_current_task(w)
+
+        if current_job_id == "none":
+            # Worker is idle
+            continue
+
+        active_tasks.add((current_job_id, current_task_id))
+        table.add_row(
+            current_job_id,
+            current_task_id,
+            "IN_PROGRESS",
+            name,
+        )
+
+    for task in pending_tasks:
+        if (task.job_id, task.task_id) in active_tasks:
+            continue
+        table.add_row(task.job_id, task.task_id, "PENDING", "<none>")
+
+    console.print(table)
+
+
 def list_workers(queue_name: str):
     """List what all the workers are doing in a particular queue"""
-
     console = Console()
 
     manager = WorkerPoolManager(queue_name)
