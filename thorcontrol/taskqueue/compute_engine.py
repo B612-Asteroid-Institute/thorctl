@@ -69,11 +69,11 @@ def update_instance_metadata(
     with googleapiclient.discovery.build("compute", "v1") as client:
         # Retrieve the current metadata so we only update the job, task and
         # status keys. Everything else should be left unchanged.
-        instance = (
+        instance_data = (
             client.instances().get(project=project, zone=zone, instance=name).execute()
         )
-        fingerprint = instance["metadata"]["fingerprint"]
-        metadata = instance["metadata"]["items"]
+        fingerprint = instance_data["metadata"]["fingerprint"]
+        metadata = instance_data["metadata"]["items"]
 
         metadata = _update_metadata_list(metadata, keyvals)
 
@@ -87,7 +87,7 @@ def update_instance_metadata(
             .setMetadata(
                 project=project,
                 zone=zone,
-                instance=instance,
+                instance=name,
                 body=request,
             )
             .execute()
