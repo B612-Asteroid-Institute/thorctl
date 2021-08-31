@@ -211,6 +211,29 @@ def new_task_id(orbits: Orbits) -> str:
     return str(uuid.uuid3(_task_id_namespace, combined_ids))
 
 
+def download_task_inputs_to_dir(bucket: Bucket, task: Task, dir: str):
+    cfg_path = _job_input_path(task.job_id, "config.yml")
+    logger.info("downloading task input %s", cfg_path)
+    cfg_bytes = bucket.blob(cfg_path).download_as_bytes()
+
+    with open(os.path.join(dir, "config.yml"), "wb") as f:
+        f.write(cfg_bytes)
+
+    obs_path = _job_input_path(task.job_id, "observations.csv")
+    logger.info("downloading task input %s", obs_path)
+    obs_bytes = bucket.blob(obs_path).download_as_bytes()
+
+    with open(os.path.join(dir, "observations.csv"), "wb") as f:
+        f.write(obs_bytes)
+
+    orbit_path = _task_input_path(task.job_id, task.task_id, "orbit.csv")
+    logger.info("downloading task input %s", orbit_path)
+    orbit_bytes = bucket.blob(orbit_path).download_as_bytes()
+
+    with open(os.path.join(dir, "orbit.csv"), "wb") as f:
+        f.write(orbit_bytes)
+
+
 def download_task_inputs(
     bucket: Bucket, task: Task
 ) -> Tuple[Configuration, pd.DataFrame, Orbits]:

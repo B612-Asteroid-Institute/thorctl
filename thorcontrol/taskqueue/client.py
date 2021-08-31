@@ -1,4 +1,7 @@
+import asyncio
 import logging
+import os
+import os.path
 import tempfile
 import time
 from typing import Iterator, Mapping, Optional
@@ -8,7 +11,6 @@ from google.cloud.pubsub_v1 import PublisherClient
 from google.cloud.storage import Bucket
 from google.cloud.storage import Client as GCSClient
 from thor.config import Configuration
-from thor.main import runTHOROrbit
 from thor.orbits import Orbits
 
 from thorcontrol.taskqueue import compute_engine
@@ -24,12 +26,14 @@ from thorcontrol.taskqueue.tasks import (
     Task,
     TaskState,
     TaskStatus,
+    download_task_inputs_to_dir,
     download_task_outputs,
     get_task_status,
     get_task_statuses,
     set_task_status,
     upload_job_inputs,
 )
+from thorcontrol.taskqueue.thor_subprocess import run_thor_subprocess
 
 logger = logging.getLogger("thor")
 
@@ -355,39 +359,32 @@ class Worker:
         """
         try:
             bucket = self.gcs.bucket(task.bucket)
-            config, observations, orbit = task.download_inputs(bucket)
-            logger.debug("downloaded inputs")
-
-            out_dir = tempfile.TemporaryDirectory(
+            temp_dir = tempfile.TemporaryDirectory(
                 prefix=f"thor_{task.job_id}_{task.task_id}",
-            ).name
+            )
+
+            input_dir = os.path.join(temp_dir.name, "inputs")
+            output_dir = os.path.join(temp_dir.name, "outputs")
+            os.makedirs(input_dir, exist_ok=True)
+            os.makedirs(output_dir, exist_ok=True)
+            download_task_inputs_to_dir(bucket, task, input_dir)
+            logger.debug("downloaded inputs")
 
             logger.info(
                 "beginning execution for job %s, task %s", task.job_id, task.task_id
             )
+            # TODO: Make this timeout a parameter on the task, or maybe a deadline associated with the Job?
+            asyncio.run(run_thor_subprocess(input_dir, output_dir, timeout=60 * 60 * 4))
+            self.mark_task_succeeded(task, bucket, output_dir)
 
-            runTHOROrbit(
-                observations,
-                orbit,
-                range_shift_config=config.RANGE_SHIFT_CONFIG,
-                cluster_link_config=config.CLUSTER_LINK_CONFIG,
-                iod_config=config.IOD_CONFIG,
-                od_config=config.OD_CONFIG,
-                odp_config=config.ODP_CONFIG,
-                out_dir=out_dir,
-                if_exists="erase",
-                logging_level=logging.INFO,
-            )
-            self.mark_task_succeeded(task, bucket, out_dir)
-            return out_dir
         except Exception as e:
             logger.error("task %s failed", task.task_id, exc_info=e)
-            self.mark_task_failed(task, bucket, out_dir, e)
+            self.mark_task_failed(task, bucket, output_dir, e)
+
         finally:
             updated_manifest = mark_task_done_in_manifest(
                 bucket, task.job_id, task.task_id
             )
-
             # If our update reduced the manifest down to zero tasks, then we
             # were the last task. Announce everything is done.
             all_tasks_done = len(updated_manifest.incomplete_tasks) == 0
