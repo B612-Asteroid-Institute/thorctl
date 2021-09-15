@@ -6,7 +6,7 @@ import colorama
 import paramiko.client
 import paramiko.ssh_exception
 
-from .worker_pool import WorkerPoolManager, _get_external_ip
+from thorcontrol.worker_pool import WorkerPoolManager, _get_external_ip
 
 logger = logging.getLogger("thorctl")
 
