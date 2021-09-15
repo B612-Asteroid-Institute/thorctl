@@ -27,6 +27,7 @@ write_files:
                         thorctl autoscale \
                             --rabbit-password-from-secret-manager \
                             --machine-type c2-standard-16 \
+                            --max-size 48 \
                             production-tasks
 
 
