@@ -26,7 +26,7 @@ write_files:
                         gcr.io/moeyens-thor-dev/thorctl:production-tasks-latest \
                         thorctl autoscale \
                             --rabbit-password-from-secret-manager \
-                            --machine-type c2-standard-16 \
+                            --machine-type e2-standard-32 \
                             --max-size 48 \
                             production-tasks
 
