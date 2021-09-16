@@ -15,7 +15,7 @@ backcall==0.2.0
     # via ipython
 bcrypt==3.2.0
     # via paramiko
-beautifulsoup4==4.9.3
+beautifulsoup4==4.10.0
     # via astroquery
 cachetools==4.2.2
     # via google-auth
@@ -27,7 +27,7 @@ cffi==1.14.6
     #   cryptography
     #   google-crc32c
     #   pynacl
-charset-normalizer==2.0.4
+charset-normalizer==2.0.5
     # via requests
 colorama==0.4.4
     # via
@@ -35,28 +35,30 @@ colorama==0.4.4
     #   rich
 commonmark==0.9.1
     # via rich
-cryptography==3.4.7
+cryptography==3.4.8
     # via
     #   paramiko
     #   secretstorage
 cycler==0.10.0
     # via matplotlib
-debugpy==1.4.1
+debugpy==1.4.3
     # via ipykernel
-decorator==5.0.9
+decorator==5.1.0
     # via ipython
 difi==1.1
     # via thor
-google-api-core[grpc]==1.31.1
+entrypoints==0.3
+    # via jupyter-client
+google-api-core[grpc]==2.0.1
     # via
     #   google-api-python-client
     #   google-cloud-core
     #   google-cloud-pubsub
     #   google-cloud-secret-manager
     #   google-cloud-storage
-google-api-python-client==2.15.0
+google-api-python-client==2.21.0
     # via -r requirements.in
-google-auth==1.34.0
+google-auth==2.1.0
     # via
     #   google-api-core
     #   google-api-python-client
@@ -65,17 +67,17 @@ google-auth==1.34.0
     #   google-cloud-storage
 google-auth-httplib2==0.1.0
     # via google-api-python-client
-google-cloud-core==1.7.2
+google-cloud-core==2.0.0
     # via google-cloud-storage
-google-cloud-pubsub==2.7.0
+google-cloud-pubsub==2.8.0
     # via -r requirements.in
-google-cloud-secret-manager==2.7.0
+google-cloud-secret-manager==2.7.1
     # via -r requirements.in
-google-cloud-storage==1.42.0
+google-cloud-storage==1.42.1
     # via -r requirements.in
 google-crc32c==1.1.2
     # via google-resumable-media
-google-resumable-media==1.3.3
+google-resumable-media==2.0.2
     # via google-cloud-storage
 googleapis-common-protos[grpc]==1.53.0
     # via
@@ -85,7 +87,7 @@ grpc-google-iam-v1==0.12.3
     # via
     #   google-cloud-pubsub
     #   google-cloud-secret-manager
-grpcio==1.39.0
+grpcio==1.40.0
     # via
     #   google-api-core
     #   google-cloud-pubsub
@@ -99,14 +101,14 @@ httplib2==0.19.1
     #   google-auth-httplib2
 idna==3.2
     # via requests
-importlib-metadata==4.6.3
+importlib-metadata==4.8.1
     # via keyring
-ipykernel==6.1.0
+ipykernel==6.4.1
     # via thor
-ipython==7.26.0
+ipython==7.27.0
     # via ipykernel
 ipython-genutils==0.2.0
-    # via traitlets
+    # via ipykernel
 jedi==0.18.0
     # via ipython
 jeepney==0.7.1
@@ -115,25 +117,25 @@ jeepney==0.7.1
     #   secretstorage
 joblib==1.0.1
     # via scikit-learn
-jupyter-client==6.1.12
+jupyter-client==7.0.2
     # via ipykernel
 jupyter-core==4.7.1
     # via jupyter-client
-keyring==23.0.1
+keyring==23.2.1
     # via astroquery
-kiwisolver==1.3.1
+kiwisolver==1.3.2
     # via matplotlib
 libcst==0.3.20
     # via
     #   google-cloud-pubsub
     #   google-cloud-secret-manager
-llvmlite==0.36.0
+llvmlite==0.37.0
     # via numba
-matplotlib==3.4.2
+matplotlib==3.4.3
     # via
     #   seaborn
     #   thor
-matplotlib-inline==0.1.2
+matplotlib-inline==0.1.3
     # via
     #   ipykernel
     #   ipython
@@ -141,9 +143,11 @@ mimeparse==0.1.3
     # via pyvo
 mypy-extensions==0.4.3
     # via typing-inspect
-numba==0.53.1
+nest-asyncio==1.5.1
+    # via jupyter-client
+numba==0.54.0
     # via thor
-numpy==1.21.1
+numpy==1.20.3
     # via
     #   astropy
     #   astroquery
@@ -159,10 +163,9 @@ numpy==1.21.1
     #   thor
 packaging==21.0
     # via
-    #   google-api-core
     #   google-cloud-pubsub
     #   google-cloud-secret-manager
-pandas==1.3.1
+pandas==1.3.3
     # via
     #   difi
     #   seaborn
@@ -177,17 +180,17 @@ pickleshare==0.7.5
     # via ipython
 pika==1.2.0
     # via -r requirements.in
-pillow==8.3.1
+pillow==8.3.2
     # via matplotlib
-plotly==5.1.0
+plotly==5.3.1
     # via thor
-prompt-toolkit==3.0.19
+prompt-toolkit==3.0.20
     # via ipython
 proto-plus==1.19.0
     # via
     #   google-cloud-pubsub
     #   google-cloud-secret-manager
-protobuf==3.17.3
+protobuf==3.18.0
     # via
     #   google-api-core
     #   googleapis-common-protos
@@ -204,7 +207,7 @@ pycparser==2.20
     # via cffi
 pyerfa==2.0.0
     # via astropy
-pygments==2.9.0
+pygments==2.10.0
     # via
     #   ipython
     #   rich
@@ -221,16 +224,14 @@ python-dateutil==2.8.2
     #   matplotlib
     #   pandas
 pytz==2021.1
-    # via
-    #   google-api-core
-    #   pandas
+    # via pandas
 pyvo==1.1
     # via astroquery
 pyyaml==5.4.1
     # via
     #   libcst
     #   thor
-pyzmq==22.2.1
+pyzmq==22.3.0
     # via jupyter-client
 requests==2.26.0
     # via
@@ -238,7 +239,7 @@ requests==2.26.0
     #   google-api-core
     #   google-cloud-storage
     #   pyvo
-rich==10.7.0
+rich==10.9.0
     # via -r requirements.in
 rsa==4.7.2
     # via google-auth
@@ -249,7 +250,7 @@ scipy==1.7.1
     #   scikit-learn
     #   seaborn
     #   thor
-seaborn==0.11.1
+seaborn==0.11.2
     # via thor
 secretstorage==3.3.1
     # via keyring
@@ -258,24 +259,19 @@ six==1.16.0
     #   astroquery
     #   bcrypt
     #   cycler
-    #   google-api-core
-    #   google-auth
     #   google-auth-httplib2
-    #   google-cloud-core
-    #   google-resumable-media
     #   grpcio
     #   html5lib
     #   plotly
-    #   protobuf
     #   pynacl
     #   python-dateutil
 soupsieve==2.2.1
     # via beautifulsoup4
-spiceypy==4.0.1
+spiceypy==4.0.2
     # via thor
 tenacity==8.0.1
     # via plotly
-git+git://github.com/moeyensj/thor@89499012623f2b616f4a88098ec7278f31e1c027#egg=thor
+git+git://github.com/moeyensj/thor@9d8a274840cb3f8e2677c146f99f52874965392f#egg=thor
     # via -r requirements.in
 threadpoolctl==2.2.0
     # via scikit-learn
@@ -283,14 +279,14 @@ tornado==6.1
     # via
     #   ipykernel
     #   jupyter-client
-traitlets==5.0.5
+traitlets==5.1.0
     # via
     #   ipykernel
     #   ipython
     #   jupyter-client
     #   jupyter-core
     #   matplotlib-inline
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
     #   libcst
     #   typing-inspect
