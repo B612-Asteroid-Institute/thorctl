@@ -1,6 +1,8 @@
 import datetime
 import json
 import logging
+import random
+import time
 from typing import AnyStr, List, Optional
 
 import google.api_core.exceptions
@@ -192,26 +194,35 @@ def mark_task_done_in_manifest(
 
     i = 0
     max_retries = 32
+
     while i < max_retries:
         i += 1
+        # Download the old version. Note the generation.
+
         try:
-            # Download the old version. Note the generation.
             old_manifest_blob = bucket.blob(path)
             old_manifest_blob.reload()
-            generation = old_manifest_blob.generation
-            assert generation is not None
+        except google.api_core.exceptions.NotFound:
+            # This can occur during a lot of write contention. Cool off a bit
+            # and try again.
+            #
+            # See https://github.com/B612-Asteroid-Institute/thorctl/issues/32
+            backoff_sleep(i)
+            continue
 
-            as_str = old_manifest_blob.download_as_text(
-                if_generation_match=generation,
-            )
+        generation = old_manifest_blob.generation
+        assert generation is not None
 
-            manifest = JobManifest.from_str(as_str)
+        as_str = old_manifest_blob.download_as_text(if_generation_match=generation)
 
-            # Remove the task from the manifest.
-            manifest.incomplete_tasks.remove(task_id)
-            # Update the timestamp
-            manifest.update_time = datetime.datetime.now(datetime.timezone.utc)
+        manifest = JobManifest.from_str(as_str)
 
+        # Remove the task from the manifest.
+        manifest.incomplete_tasks.remove(task_id)
+        # Update the timestamp
+        manifest.update_time = datetime.datetime.now(datetime.timezone.utc)
+
+        try:
             # Update the new version - as long as the generation hasn't changed.
             bucket.blob(path).upload_from_string(
                 manifest.to_str(),
@@ -219,6 +230,7 @@ def mark_task_done_in_manifest(
             )
             logger.debug("updated manifest generation=%s", generation)
             return manifest
+
         except google.api_core.exceptions.PreconditionFailed:
             # The generation changed out from under us. Try again.
             logger.debug(
@@ -230,9 +242,28 @@ def mark_task_done_in_manifest(
                 "got a 404 when asking to update manifest (tried generation=%s)",
                 generation,
             )
+        backoff_sleep(i)
     raise RemoteOperationFailure(
         "exceeded maximum retries when attempting to update manifest"
     )
+
+
+def backoff_sleep(i: int):
+    """
+    sleep for a random amount of time between 1.2**(i-1) and 1.2**(i) seconds.
+
+    The 1.2 base gives a bit of exponential backoff, but still performs well
+    for iterations as high as 32 (1.2**32 == 341.82 seconds, or about 6
+    minutes).
+
+    The randomness gives some jitter which makes sure we don't stampede the
+    backend in waves.
+    """
+    min_sleep = 1.2 ** (i - 1)
+    max_sleep = 1.2 ** (i)
+    sleep_for = random.random() * (max_sleep - min_sleep) + min_sleep
+    logger.debug("sleeping for %.3f seconds", sleep_for)
+    time.sleep(sleep_for)
 
 
 class RemoteOperationFailure(Exception):
