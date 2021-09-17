@@ -220,18 +220,28 @@ def mark_task_done_in_manifest(
                 manifest.to_str(),
                 if_generation_match=generation,
             )
-            logger.debug("updated manifest generation=%s", generation)
+            logger.debug(
+                "task='%s', job='%s', updated manifest generation=%s",
+                generation,
+                task_id,
+                job_id,
+            )
             return manifest
 
         except google.api_core.exceptions.PreconditionFailed:
             # The generation changed out from under us. Try again.
             logger.debug(
-                "lost a race to update manifest (tried generation=%s)", generation
+                "task='%s', job='%s', lost a race to update manifest (tried generation=%s)",
+                task_id,
+                job_id,
+                generation,
             )
         except google.api_core.exceptions.NotFound:
             # Sometimes this appears if we ask for a very recent generation
             logger.debug(
-                "got a 404 when asking to update manifest (tried generation=%s)",
+                "task='%s', job='%s', got a 404 when asking to update manifest (tried generation=%s)",
+                task_id,
+                job_id,
                 generation,
             )
         except Exception:

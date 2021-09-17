@@ -1,18 +1,21 @@
 import argparse
 import logging
 import os
+import sys
 from typing import List, Optional
 
 import pika
 from google.cloud.secretmanager_v1 import SecretManagerServiceClient
+from google.cloud.storage import Client as GCSClient
 from rich.console import Console
 from rich.table import Table
 
+from thorcontrol.taskqueue.client import Client as TaskQueueClient
 from thorcontrol.taskqueue.queue import TaskQueueConnection
+from thorcontrol.worker_pool import WorkerPoolManager, _get_external_ip
 
 from .autoscaler import Autoscaler
 from .sshconn import WorkerPoolSSHConnection
-from .worker_pool import WorkerPoolManager, _get_external_ip
 
 logger = logging.getLogger("thorctl")
 
@@ -49,6 +52,19 @@ def dispatch(parser, args):
             args.rabbit_password,
             args.rabbit_password_from_secret_manager,
         )
+    elif args.command == "retry-task":
+        retry_task(
+            args.queue,
+            args.bucket,
+            args.job_id,
+            args.task_id,
+            args.rabbit_host,
+            args.rabbit_port,
+            args.rabbit_username,
+            args.rabbit_password,
+            args.rabbit_password_from_secret_manager,
+        )
+
     elif args.command is None:
         parser.print_usage()
     else:
@@ -183,6 +199,57 @@ def parse_args():
         help="password to connect with to the rabbit broker",
     )
     list_tasks.add_argument(
+        "--rabbit-password-from-secret-manager",
+        action="store_true",
+        help="load rabbit password from google secret manager",
+    )
+
+    retry_task = subparsers.add_parser(
+        "retry-task",
+        help="retry a task that appears to be stuck",
+    )
+    retry_task.add_argument(
+        "queue",
+        type=str,
+        help="name of the queue",
+    )
+    retry_task.add_argument(
+        "bucket",
+        type=str,
+        help="name of the bucket holding the task's data",
+    )
+    retry_task.add_argument(
+        "job_id",
+        type=str,
+        help="ID of the job holding the task",
+    )
+    retry_task.add_argument(
+        "task_id",
+        type=str,
+        help="ID of the task to retry",
+    )
+    retry_task.add_argument(
+        "--rabbit-host",
+        type=str,
+        default="rabbit.c.moeyens-thor-dev.internal",
+        help="hostname of the rabbit broker",
+    )
+    retry_task.add_argument(
+        "--rabbit-port", type=int, default=5672, help="port of the rabbit broker"
+    )
+    retry_task.add_argument(
+        "--rabbit-username",
+        type=str,
+        default="thor",
+        help="username to connect with to the rabbit broker",
+    )
+    retry_task.add_argument(
+        "--rabbit-password",
+        type=str,
+        default="$RABBIT_PASSWORD env var",
+        help="password to connect with to the rabbit broker",
+    )
+    retry_task.add_argument(
         "--rabbit-password-from-secret-manager",
         action="store_true",
         help="load rabbit password from google secret manager",
@@ -383,3 +450,57 @@ def list_workers(queue_name: str):
         )
 
     console.print(table)
+
+
+def retry_task(
+    queue_name: str,
+    bucket_name: str,
+    job_id: str,
+    task_id: str,
+    rabbit_host: str,
+    rabbit_port: int,
+    rabbit_username: str,
+    rabbit_password: Optional[str],
+    rabbit_password_from_secret_manager: bool,
+):
+    console = Console()
+
+    with console.status("connecting to rabbitmq..."):
+        if rabbit_password == "$RABBIT_PASSWORD env var":
+            rabbit_password = os.environ.get("RABBIT_PASSWORD")
+        if rabbit_password is None and rabbit_password_from_secret_manager:
+            secret_client = SecretManagerServiceClient()
+            response = secret_client.access_secret_version(
+                name="projects/moeyens-thor-dev/secrets/rabbitmq-password/versions/latest"
+            )
+            rabbit_password = response.payload.data.decode("utf8")
+        rabbit_params = pika.ConnectionParameters(
+            host=rabbit_host,
+            port=rabbit_port,
+            credentials=pika.PlainCredentials(
+                username=rabbit_username,
+                password=rabbit_password,
+            ),
+        )
+        queue_conn = TaskQueueConnection(rabbit_params, queue_name)
+        queue_conn.connect()
+
+    with console.status("connecting to google storage bucket..."):
+        gcs = GCSClient()
+        bucket = gcs.bucket(bucket_name)
+
+    client = TaskQueueClient(bucket, queue_conn)
+
+    with console.status("looking up job manifest..."):
+        manifest = client.get_job_manifest(job_id)
+
+    if task_id not in manifest.task_ids:
+        console.print("error: task not found in job", style="bold red")
+        console.print("task IDs in job:")
+        console.print(manifest.task_ids)
+        sys.exit(1)
+
+    with console.status("relaunching task..."):
+        client.relaunch_task(job_id, task_id)
+
+    console.print("task relaunched")

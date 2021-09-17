@@ -5,8 +5,7 @@ from typing import Sequence
 import pika
 
 from thorcontrol.taskqueue.queue import TaskQueueConnection
-
-from .worker_pool import WorkerPoolManager
+from thorcontrol.worker_pool import WorkerPoolManager
 
 logger = logging.getLogger("thorctl")
 

@@ -114,6 +114,18 @@ class Client:
 
         return manifest
 
+    def relaunch_task(self, job_id: str, task_id: str):
+        task = Task(
+            job_id=job_id,
+            task_id=task_id,
+            bucket=self.bucket.name,
+            channel=None,
+            delivery_tag=-1,
+        )
+        set_task_status(self.bucket, job_id, task_id, TaskState.REQUESTED, worker=None)
+        logger.info("created task (id=%s)", task.task_id)
+        self.queue.publish(task)
+
     def monitor_job_status(self, job_id: str, poll_interval: float = 10):
         """Poll for task status updates and log them until all tasks are complete.
 
