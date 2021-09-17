@@ -194,6 +194,7 @@ def mark_task_done_in_manifest(
 
     i = 0
     max_retries = 32
+    generation = None
 
     while i < max_retries:
         i += 1
@@ -202,27 +203,18 @@ def mark_task_done_in_manifest(
         try:
             old_manifest_blob = bucket.blob(path)
             old_manifest_blob.reload()
-        except google.api_core.exceptions.NotFound:
-            # This can occur during a lot of write contention. Cool off a bit
-            # and try again.
-            #
-            # See https://github.com/B612-Asteroid-Institute/thorctl/issues/32
-            backoff_sleep(i)
-            continue
 
-        generation = old_manifest_blob.generation
-        assert generation is not None
+            generation = old_manifest_blob.generation
+            assert generation is not None
 
-        as_str = old_manifest_blob.download_as_text(if_generation_match=generation)
+            as_str = old_manifest_blob.download_as_text(if_generation_match=generation)
+            manifest = JobManifest.from_str(as_str)
 
-        manifest = JobManifest.from_str(as_str)
+            # Remove the task from the manifest.
+            manifest.incomplete_tasks.remove(task_id)
+            # Update the timestamp
+            manifest.update_time = datetime.datetime.now(datetime.timezone.utc)
 
-        # Remove the task from the manifest.
-        manifest.incomplete_tasks.remove(task_id)
-        # Update the timestamp
-        manifest.update_time = datetime.datetime.now(datetime.timezone.utc)
-
-        try:
             # Update the new version - as long as the generation hasn't changed.
             bucket.blob(path).upload_from_string(
                 manifest.to_str(),
@@ -241,6 +233,10 @@ def mark_task_done_in_manifest(
             logger.debug(
                 "got a 404 when asking to update manifest (tried generation=%s)",
                 generation,
+            )
+        except Exception:
+            logger.exception(
+                "unexpected error when attempting to update manifest, will retry",
             )
         backoff_sleep(i)
     raise RemoteOperationFailure(
