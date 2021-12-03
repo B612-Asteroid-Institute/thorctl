@@ -25,7 +25,19 @@ RUN /opt/miniconda3/bin/conda create \
       --channel astropy \
       --channel moeyensj \
     --channel conda-forge \
-    python=3.8 openorb
+    python=3.8 
+
+ENV PATH="/opt/miniconda3/bin:${PATH}"
+
+RUN git clone https://github.com/B612-Asteroid-Institute/oorb.git \ 
+        && cd oorb \
+        && git checkout kk-quick-fix \ 
+        && ./configure gfortran opt --prefix=/opt/oorb --with-pyoorb \ 
+        && apt-get -y install make gfortran libblas-dev liblapack-dev \
+        && conda install -c conda-forge python-configuration \
+        && conda install python numpy pytest -n base \
+        && make \
+        && make install 
 
 COPY infra/with_conda_env.sh /usr/bin/with_conda
 
