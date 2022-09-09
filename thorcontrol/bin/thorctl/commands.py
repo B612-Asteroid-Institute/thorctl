@@ -19,6 +19,9 @@ from .sshconn import WorkerPoolSSHConnection
 
 logger = logging.getLogger("thorctl")
 
+# HACK: not settable currently
+DEFAULT_PROJECT = "moeyens-thor-dev"
+
 
 def dispatch(parser, args):
     if args.command == "size":
@@ -486,7 +489,7 @@ def retry_task(
         queue_conn.connect()
 
     with console.status("connecting to google storage bucket..."):
-        gcs = GCSClient()
+        gcs = GCSClient(project=DEFAULT_PROJECT)
         bucket = gcs.bucket(bucket_name)
 
     client = TaskQueueClient(bucket, queue_conn)
