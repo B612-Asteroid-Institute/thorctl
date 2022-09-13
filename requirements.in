@@ -1,5 +1,5 @@
 # THOR:
-git+https://github.com/moeyensj/thor@e24ec5f297349d68840c0ce1bf0d17f92c3c4869#egg=thor
+git+https://github.com/moeyensj/thor@cc697a03739b8fe9f4c71f8b1840bb8bfaceb4c5#egg=thor
 
 pika
 google-cloud-storage>=1.39.0
