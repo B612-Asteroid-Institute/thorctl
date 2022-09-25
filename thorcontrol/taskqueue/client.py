@@ -386,7 +386,7 @@ class Worker:
                 "beginning execution for job %s, task %s", task.job_id, task.task_id
             )
             # TODO: Make this timeout a parameter on the task, or maybe a deadline associated with the Job?
-            asyncio.run(run_thor_subprocess(input_dir, output_dir, timeout=60 * 60 * 4))
+            asyncio.run(run_thor_subprocess(input_dir, output_dir, timeout=60 * 60 * 12))
             self.mark_task_succeeded(task, bucket, output_dir)
 
         except Exception as e:
