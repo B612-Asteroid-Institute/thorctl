@@ -29,9 +29,9 @@ RUN /opt/miniconda3/bin/conda create \
 
 ENV PATH="/opt/miniconda3/bin:${PATH}"
 
-RUN git clone https://github.com/B612-Asteroid-Institute/oorb.git \ 
+RUN git clone https://github.com/KatKiker/oorb.git \ 
         && cd oorb \
-        && git checkout kk-quick-fix \ 
+        && git checkout kk-oorb-fix-2 \ 
         && ./configure gfortran opt --prefix=/opt/oorb --with-pyoorb \ 
         && apt-get -y install make gfortran libblas-dev liblapack-dev \
         && conda install -c conda-forge python-configuration \
