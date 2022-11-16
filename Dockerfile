@@ -32,11 +32,17 @@ ENV PATH="/opt/miniconda3/bin:${PATH}"
 RUN git clone https://github.com/KatKiker/oorb.git \ 
         && cd oorb \
         && git checkout kk-oorb-fix-2 \ 
-        && ./configure gfortran opt --prefix=/opt/oorb --with-pyoorb \ 
+        && apt-get update \
         && apt-get -y install make gfortran libblas-dev liblapack-dev \
+        && ./configure gfortran opt --prefix=/opt/oorb --with-pyoorb \ 
         && conda install -c conda-forge python-configuration \
         && conda install python numpy pytest -n base \
-        && make \
+        && make -j4 \
+        && make ephem \ 
+        && cd data/ \
+        && ./getBC430 \
+        && ./updateOBSCODE \
+        && cd .. \
         && make install 
 
 COPY infra/with_conda_env.sh /usr/bin/with_conda
